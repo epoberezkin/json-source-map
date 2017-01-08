@@ -1,0 +1,26 @@
+{
+  "name": "json-source-map",
+  "version": "0.0.1",
+  "description": "Parse/stringify JSON and provide source-map for JSON-pointers to all nodes",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/epoberezkin/json-source-map.git"
+  },
+  "keywords": [
+    "JSON",
+    "parse",
+    "stringify",
+    "json-pointer",
+    "source-map"
+  ],
+  "author": "Evgeny Poberezkin",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/epoberezkin/json-source-map/issues"
+  },
+  "homepage": "https://github.com/epoberezkin/json-source-map#readme"
+}
