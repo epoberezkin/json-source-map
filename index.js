@@ -39,7 +39,11 @@ exports.stringify = function (data, _, whitespace) {
       case 'string':
         out(quoted(data)); break;
       case 'object':
-        if (Array.isArray(data)) {
+        if (data === null) {
+          out('null');
+        } else if (typeof data.toJSON == 'function') {
+          out(quoted(data.toJSON()));
+        } else if (Array.isArray(data)) {
           if (data.length) {
             out('[');
             var itemLvl = lvl + 1;
@@ -55,10 +59,6 @@ exports.stringify = function (data, _, whitespace) {
           } else {
             out('[]');
           }
-        } else if (data === null) {
-          out('null');
-        } else if (data instanceof Date) {
-          out(quoted(data.toJSON()));
         } else {
           var keys = Object.keys(data);
           if (keys.length) {

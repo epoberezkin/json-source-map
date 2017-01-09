@@ -66,18 +66,22 @@ describe('stringify', () => {
       null: null,
       arr: [],
       obj: {},
-      date: new Date('2017-01-09T08:50:13.064Z')
+      date: new Date('2017-01-09T08:50:13.064Z'),
+      custom: {
+        toJSON: () => 'custom'
+      }
     }
 
     var { json, pointers } = jsonMap.stringify(data, null, '  ');
 
     data.date = '2017-01-09T08:50:13.064Z';
+    data.custom = 'custom';
     testResult(json, pointers, data);
 
     assert.deepEqual(pointers, {
       '': {
         value: { line: 0, column: 0, pos: 0 },
-        valueEnd: { line: 6, column: 1, pos: 98 }
+        valueEnd: { line: 7, column: 1, pos: 120 }
       },
       '/str': {
         key: { line: 1, column: 2, pos: 4 },
@@ -108,6 +112,12 @@ describe('stringify', () => {
         keyEnd: { line: 5, column: 8, pos: 68 },
         value: { line: 5, column: 10, pos: 70 },
         valueEnd: { line: 5, column: 36, pos: 96 }
+      },
+      '/custom': {
+        key: { line: 6, column: 2, pos: 100 },
+        keyEnd: { line: 6, column: 10, pos: 108 },
+        value: { line: 6, column: 12, pos: 110 },
+        valueEnd: { line: 6, column: 20, pos: 118 }
       }
     });
   });
