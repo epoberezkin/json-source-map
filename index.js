@@ -5,6 +5,7 @@ exports.parse = function () {
 };
 
 exports.stringify = function (data, _, whitespace) {
+  if (!validType(data)) return;
   switch (typeof whitespace) {
     case 'number':
       var wsLen = whitespace > 10
@@ -25,14 +26,12 @@ exports.stringify = function (data, _, whitespace) {
   var pointers = {};
   var line = 0;
   var column = 0;
+  var pos = 0;
   _stringify(data, 0, '');
   return { json: json, pointers: pointers };
 
   function _stringify(data, lvl, ptr) {
-    pointers[ptr] = {
-      line: line,
-      column: column
-    };
+    map(ptr, 'value');
     switch (typeof data) {
       case 'number':
       case 'boolean':
@@ -70,10 +69,13 @@ exports.stringify = function (data, _, whitespace) {
               var value = data[key];
               if (validType(value)) {
                 if (i) out(',');
-                indent(propLvl);
-                out(quoted(key) + ':');
-                if (whitespace) out(' ');
                 var propPtr = ptr + '/' + escapeJsonPointer(key);
+                indent(propLvl);
+                map(propPtr, 'key');
+                out(quoted(key));
+                map(propPtr, 'keyEnd');
+                out(':')
+                if (whitespace) out(' ');
                 _stringify(value, propLvl, propPtr);
               }
             }
@@ -84,19 +86,32 @@ exports.stringify = function (data, _, whitespace) {
           }
         }
     }
+    map(ptr, 'valueEnd');
   }
 
   function out(str) {
     column += str.length;
+    pos += str.length;
     json += str;
   }
 
   function indent(lvl) {
     if (whitespace) {
       line++;
-      column = lvl * whitespace.length;
+      var wsLen = lvl * whitespace.length;
+      column = wsLen;
+      pos += wsLen + 1;
       json += '\n' + repeat(lvl, whitespace);
     }
+  }
+
+  function map(ptr, prop) {
+    pointers[ptr] = pointers[ptr] || {};
+    pointers[ptr][prop] = {
+      line: line,
+      column: column,
+      pos: pos
+    };
   }
 
   function repeat(n, str) {
