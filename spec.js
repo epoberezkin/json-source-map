@@ -69,7 +69,9 @@ describe('stringify', () => {
       date: new Date('2017-01-09T08:50:13.064Z'),
       custom: {
         toJSON: () => 'custom'
-      }
+      },
+      control: '"\f\b\n\r\t"',
+      'esc/aped~': true
     }
 
     var { json, pointers } = jsonMap.stringify(data, null, '  ');
@@ -77,11 +79,10 @@ describe('stringify', () => {
     data.date = '2017-01-09T08:50:13.064Z';
     data.custom = 'custom';
     testResult(json, pointers, data);
-
     assert.deepEqual(pointers, {
       '': {
         value: { line: 0, column: 0, pos: 0 },
-        valueEnd: { line: 7, column: 1, pos: 120 }
+        valueEnd: { line: 9, column: 1, pos: 172 }
       },
       '/str': {
         key: { line: 1, column: 2, pos: 4 },
@@ -118,6 +119,18 @@ describe('stringify', () => {
         keyEnd: { line: 6, column: 10, pos: 108 },
         value: { line: 6, column: 12, pos: 110 },
         valueEnd: { line: 6, column: 20, pos: 118 }
+      },
+      '/control': {
+        key: { column: 2, line: 7, pos: 122 },
+        keyEnd: { column: 11, line: 7, pos: 131 },
+        value: { column: 13, line: 7, pos: 133 },
+        valueEnd: { column: 29, line: 7, pos: 149 }
+      },
+      '/esc~1aped~0': {
+        key: { line: 8, column: 2, pos: 153 },
+        keyEnd: { line: 8, column: 13, pos: 164 },
+        value: { line: 8, column: 15, pos: 166 },
+        valueEnd: { line: 8, column: 19, pos: 170 }
       }
     });
   });
@@ -128,9 +141,9 @@ describe('stringify', () => {
     for (var ptr in pointers) {
       var map = pointers[ptr];
       if (map.key !== undefined) {
-        assert.equal(
+        assert.strictEqual(
           JSON.parse(json.slice(map.key.pos, map.keyEnd.pos)),
-          jsonPointer.parse(ptr).slice(-1) // key
+          jsonPointer.parse(ptr).slice(-1)[0] // key
         );
       }
       assert.deepStrictEqual(
