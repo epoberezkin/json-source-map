@@ -21,6 +21,7 @@ describe('stringify', () => {
     };
 
     var { json, pointers } = jsonMap.stringify(data, null, 2);
+
     assert.deepStrictEqual(JSON.parse(json), data);
     for (var ptr in pointers) {
       var map = pointers[ptr];
@@ -59,4 +60,4 @@ describe('stringify', () => {
       }
     });
   });
-})
+});
