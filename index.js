@@ -134,11 +134,11 @@ var ESC_R = /\r/g;
 var ESC_T = /\t/g;
 function quoted(str) {
   str = str.replace(ESC_QUOTE, '\\$&')
-            .replace(ESC_F, '\\f')
-            .replace(ESC_B, '\\b')
-            .replace(ESC_N, '\\n')
-            .replace(ESC_R, '\\r')
-            .replace(ESC_T, '\\t');
+           .replace(ESC_F, '\\f')
+           .replace(ESC_B, '\\b')
+           .replace(ESC_N, '\\n')
+           .replace(ESC_R, '\\r')
+           .replace(ESC_T, '\\t');
   return '"' + str + '"';
 }
 
