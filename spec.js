@@ -1,17 +1,108 @@
 'use strict';
 
-var jsonMap = require('.');
+var jsonMap = require('./index');
 var assert = require('assert');
 var jsonPointer = require('json-pointer')
 
 
-describe('parse', () => {
+describe('parse', function() {
+  describe('simple values', function() {
+    it('should parse true/false/null', function() {
+      testParse('true', true);
+      testParse('false', false);
+      testParse('null', null);
+
+      testParseFailToken('ture', 'u', 1);
+      testParseFailToken('truz', 'z', 3);
+      testParseFailToken('truetrue', 't', 4);
+      // testParseFailToken('true true', 't', 5);
+      testParseFailToken('undefined', 'u', 0)
+      testParseFailEnd('tru');
+    });
+
+    it('should parse strings', function() {
+      testParse('"foo"', 'foo');
+      testParse('"foo\\bbar"', 'foo\bbar');
+      testParse('"foo\\fbar"', 'foo\fbar');
+      testParse('"foo\\nbar"', 'foo\nbar');
+      testParse('"foo\\rbar"', 'foo\rbar');
+      testParse('"foo\\tbar"', 'foo\tbar');
+      testParse('"foo\\"bar"', 'foo\"bar');
+      testParse('"foo\\/bar"', 'foo\/bar');
+      testParse('"foo\\\\bar"', 'foo\\bar');
+      testParse('"foo\\u000Abar"', 'foo\nbar');
+      testParse('"foo\\u000abar"', 'foo\nbar');
+      testParse('"foo\\u2028bar"', 'foo\u2028bar');
+
+      testParseFailToken('"foo\\abar"', 'a', 5);
+      testParseFailToken('"foo\\u000Xbar"', 'X', 9);
+      testParseFailToken('"foo"true', 't', 5);
+      // testParseFailToken('"foo" "foo"', '"', 6);
+      testParseFailEnd('"foo');
+    });
+
+    it('should parse numbers', function() {
+      testParse('123', 123);
+      testParse('123.45', 123.45);
+      testParse('-123.45', -123.45);
+      testParse('0', 0);
+      testParse('0.45', 0.45);
+      testParse('1e2', 100);
+      testParse('1e+2', 100);
+      testParse('1e-2', 0.01);
+      testParse('1.23e2', 123);
+      testParse('1.23e-2', 0.0123);
+      testParse('1.23e12', 1230000000000);
+
+      testParseFailToken('123a', 'a', 3);
+      testParseFailToken('123.a', 'a', 4);
+      testParseFailToken('--123', '-', 1);
+      testParseFailToken('+123', '+', 0);
+      testParseFailToken('01', '1', 1);
+      testParseFailToken('00', '0', 1);
+      testParseFailToken('1..', '.', 2);
+      testParseFailToken('1.e2', 'e', 2);
+      testParseFailToken('1.23ee', 'e', 5);
+      testParseFailEnd('1.');
+      testParseFailEnd('1.23e');
+    });
+  });
+
   it('should parse JSON string and generate mappings');
+
+
+  function testParse(json, expectedData) {
+    var result = jsonMap.parse(json);
+    var data = result.data;
+    var pointers = result.pointers;
+    assert.deepStrictEqual(data, expectedData);
+    testResult(json, pointers, data);
+    return pointers;
+  }
+
+  function testParseFailToken(json, token, pos) {
+    testParseFail(json, 'Unexpected token ' + token + ' in JSON at position ' + pos);
+  }
+
+  function testParseFailEnd(json) {
+    testParseFail(json, 'Unexpected end of JSON input');
+  }
+
+  function testParseFail(json, expectedMessage) {
+    try {
+      jsonMap.parse(json);
+      assert.fail('should have thrown exception');
+    } catch(e) {
+      if (e instanceof assert.AssertionError) throw e;
+      assert(e instanceof SyntaxError);
+      assert.equal(e.message, expectedMessage);
+    }
+  }
 });
 
 
-describe('stringify', () => {
-  it('should stringify data and generate mappings', () => {
+describe('stringify', function() {
+  it('should stringify data and generate mappings', function() {
     var data = {
       "foo": [
         {
@@ -24,7 +115,9 @@ describe('stringify', () => {
       ]
     };
 
-    var { json, pointers } = jsonMap.stringify(data, null, 2);
+    var result = jsonMap.stringify(data, null, 2);
+    var json = result.json;
+    var pointers = result.pointers;
 
     testResult(json, pointers, data);
     assert.deepEqual(pointers, {
@@ -83,7 +176,7 @@ describe('stringify', () => {
     });
   });
 
-  it('should stringify string, null, empty array, empty object, Date', () => {
+  it('should stringify string, null, empty array, empty object, Date', function() {
     var data = {
       str: 'foo',
       null: null,
@@ -91,13 +184,15 @@ describe('stringify', () => {
       obj: {},
       date: new Date('2017-01-09T08:50:13.064Z'),
       custom: {
-        toJSON: () => 'custom'
+        toJSON: function () { return 'custom'; }
       },
       control: '"\f\b\n\r\t"',
       'esc/aped~': true
     }
 
-    var { json, pointers } = jsonMap.stringify(data, null, '  ');
+    var result = jsonMap.stringify(data, null, '  ');
+    var json = result.json;
+    var pointers = result.pointers;
 
     data.date = '2017-01-09T08:50:13.064Z';
     data.custom = 'custom';
@@ -158,13 +253,13 @@ describe('stringify', () => {
     });
   });
 
-  it('should return undefined if data is not a valid type', () => {
+  it('should return undefined if data is not a valid type', function() {
     assert.strictEqual(jsonMap.stringify(undefined), undefined);
     assert.strictEqual(jsonMap.stringify(function(){}), undefined);
     assert.strictEqual(jsonMap.stringify(Symbol()), undefined);
   });
 
-  it('should generate JSON without whitespace', () => {
+  it('should generate JSON without whitespace', function() {
     var data = {
       foo: [
         {
@@ -173,7 +268,9 @@ describe('stringify', () => {
       ]
     };
 
-    var { json, pointers } = jsonMap.stringify(data);
+    var result = jsonMap.stringify(data);
+    var json = result.json;
+    var pointers = result.pointers;
 
     testResult(json, pointers, data);
     assert.deepStrictEqual(pointers, {
@@ -200,7 +297,7 @@ describe('stringify', () => {
     });
   });
 
-  it('should skip properties with invalid types', () => {
+  it('should skip properties with invalid types', function() {
     var data = {
       foo: {
         bar: null,
@@ -216,7 +313,7 @@ describe('stringify', () => {
     );
   });
 
-  it('should stringify items with invalid types as null', () => {
+  it('should stringify items with invalid types as null', function() {
     var data = {
       foo: [
         null,
@@ -266,26 +363,26 @@ describe('stringify', () => {
   });
 
 
-  function testResult(json, pointers, data) {
-    assert.deepStrictEqual(JSON.parse(json), data);
-    for (var ptr in pointers) {
-      var map = pointers[ptr];
-      if (map.key !== undefined) {
-        assert.strictEqual(
-          JSON.parse(json.slice(map.key.pos, map.keyEnd.pos)),
-          jsonPointer.parse(ptr).slice(-1)[0] // key
-        );
-      }
-      assert.deepStrictEqual(
-        JSON.parse(json.slice(map.value.pos, map.valueEnd.pos)),
-        jsonPointer.get(data, ptr) // value
-      );
-    }
-  }
-
-
   function equal(objects) {
     for (var i=1; i<objects.lenght; i++)
       assert.deepStrictEqual(objects[0], objects[i]);
   }
 });
+
+
+function testResult(json, pointers, data) {
+  assert.deepStrictEqual(JSON.parse(json), data);
+  for (var ptr in pointers) {
+    var map = pointers[ptr];
+    if (map.key !== undefined) {
+      assert.strictEqual(
+        JSON.parse(json.slice(map.key.pos, map.keyEnd.pos)),
+        jsonPointer.parse(ptr).slice(-1)[0] // key
+      );
+    }
+    assert.deepStrictEqual(
+      JSON.parse(json.slice(map.value.pos, map.valueEnd.pos)),
+      jsonPointer.get(data, ptr) // value
+    );
+  }
+}
