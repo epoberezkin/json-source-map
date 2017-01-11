@@ -1,12 +1,28 @@
 'use strict';
 
+var escapedChars = {
+  'b': '\b',
+  'f': '\f',
+  'n': '\n',
+  'r': '\r',
+  't': '\t',
+  '"': '"',
+  '/': '/',
+  '\\': '\\'
+};
+
+var A_CODE = 'a'.charCodeAt();
+
+
 exports.parse = function (source) {
   var pointers = {};
   var line = 0;
   var column = 0;
   var pos = 0;
-  var data = _parse('', true);
-  return { data: data, pointers: pointers };
+  return {
+    data: _parse('', true),
+    pointers: pointers
+  };
 
   function _parse(ptr, topLevel) {
     whitespace();
@@ -51,7 +67,7 @@ exports.parse = function (source) {
         else if (char == 'u')
           str += getCharCode();
         else
-          wasUnexpectedToken();          
+          wasUnexpectedToken();
       } else {
         str += char;
       }
@@ -127,8 +143,7 @@ exports.parse = function (source) {
 
   function read(str) {
     for (var i=0; i<str.length; i++)
-      if (getChar() !== str[i])
-        wasUnexpectedToken();
+      if (getChar() !== str[i]) wasUnexpectedToken();
   }
 
   function getChar() {
@@ -202,19 +217,6 @@ exports.parse = function (source) {
   }
 };
 
-var escapedChars = {
-  'b': '\b',
-  'f': '\f',
-  'n': '\n',
-  'r': '\r',
-  't': '\t',
-  '"': '"',
-  '/': '/',
-  '\\': '\\'
-};
-
-var A_CODE = 'a'.charCodeAt();
-
 
 exports.stringify = function (data, _, whitespace) {
   if (!validType(data)) return;
@@ -240,22 +242,25 @@ exports.stringify = function (data, _, whitespace) {
   var column = 0;
   var pos = 0;
   _stringify(data, 0, '');
-  return { json: json, pointers: pointers };
+  return {
+    json: json,
+    pointers: pointers
+  };
 
-  function _stringify(data, lvl, ptr) {
+  function _stringify(_data, lvl, ptr) {
     map(ptr, 'value');
-    switch (typeof data) {
+    switch (typeof _data) {
       case 'number':
       case 'boolean':
-        out('' + data); break;
+        out('' + _data); break;
       case 'string':
-        out(quoted(data)); break;
+        out(quoted(_data)); break;
       case 'object':
-        if (data === null)
+        if (_data === null)
           out('null');
-        else if (typeof data.toJSON == 'function')
-          out(quoted(data.toJSON()));
-        else if (Array.isArray(data))
+        else if (typeof _data.toJSON == 'function')
+          out(quoted(_data.toJSON()));
+        else if (Array.isArray(_data))
           stringifyArray();
         else
           stringifyObject();
@@ -263,13 +268,13 @@ exports.stringify = function (data, _, whitespace) {
     map(ptr, 'valueEnd');
 
     function stringifyArray() {
-      if (data.length) {
+      if (_data.length) {
         out('[');
         var itemLvl = lvl + 1;
-        for (var i=0; i<data.length; i++) {
+        for (var i=0; i<_data.length; i++) {
           if (i) out(',');
           indent(itemLvl);
-          var item = validType(data[i]) ? data[i] : null;
+          var item = validType(_data[i]) ? _data[i] : null;
           var itemPtr = ptr + '/' + i;
           _stringify(item, itemLvl, itemPtr);
         }
@@ -281,13 +286,13 @@ exports.stringify = function (data, _, whitespace) {
     }
 
     function stringifyObject() {
-      var keys = Object.keys(data);
+      var keys = Object.keys(_data);
       if (keys.length) {
         out('{');
         var propLvl = lvl + 1;
         for (var i=0; i<keys.length; i++) {
           var key = keys[i];
-          var value = data[key];
+          var value = _data[key];
           if (validType(value)) {
             if (i) out(',');
             var propPtr = ptr + '/' + escapeJsonPointer(key);
@@ -295,7 +300,7 @@ exports.stringify = function (data, _, whitespace) {
             map(propPtr, 'key');
             out(quoted(key));
             map(propPtr, 'keyEnd');
-            out(':')
+            out(':');
             if (whitespace) out(' ');
             _stringify(value, propLvl, propPtr);
           }
@@ -317,9 +322,9 @@ exports.stringify = function (data, _, whitespace) {
   function indent(lvl) {
     if (whitespace) {
       line++;
-      var wsLen = lvl * whitespace.length;
-      column = wsLen;
-      pos += wsLen + 1;
+      var ws = lvl * whitespace.length;
+      column = ws;
+      pos += ws + 1;
       json += '\n' + repeat(lvl, whitespace);
     }
   }

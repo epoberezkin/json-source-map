@@ -1,8 +1,8 @@
 'use strict';
 
-var jsonMap = require('./index');
+var jsonMap = require('../index');
 var assert = require('assert');
-var jsonPointer = require('json-pointer')
+var jsonPointer = require('json-pointer');
 
 
 describe('parse', function() {
@@ -21,7 +21,7 @@ describe('parse', function() {
       testParseFailToken('truz', 'z', 3);
       testParseFailToken('truetrue', 't', 4);
       // testParseFailToken('true true', 't', 5);
-      testParseFailToken('undefined', 'u', 0)
+      testParseFailToken('undefined', 'u', 0);
       testParseFailEnd('tru');
     });
 
@@ -122,7 +122,7 @@ describe('parse', function() {
 
       testParse(JSON.stringify(data), data);
     });
-  })
+  });
 
 
   function testParse(json, expectedData, skipReverseCheck) {
@@ -248,7 +248,7 @@ describe('stringify', function() {
       },
       control: '"\f\b\n\r\t"',
       'esc/aped~': true
-    }
+    };
 
     var result = jsonMap.stringify(data, null, '  ');
     var json = result.json;
@@ -424,7 +424,7 @@ describe('stringify', function() {
 
 
   function equal(objects) {
-    for (var i=1; i<objects.lenght; i++)
+    for (var i=1; i<objects.length; i++)
       assert.deepStrictEqual(objects[0], objects[i]);
   }
 });
