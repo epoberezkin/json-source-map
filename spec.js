@@ -7,6 +7,11 @@ var jsonPointer = require('json-pointer')
 
 describe('parse', function() {
   describe('simple values', function() {
+    it('should throw exception on empty line/whitespace', function() {
+      testParseFailEnd('');
+      // testParseFailEnd(' ');
+    });
+
     it('should parse true/false/null', function() {
       testParse('true', true);
       testParse('false', false);
@@ -28,11 +33,11 @@ describe('parse', function() {
       testParse('"foo\\rbar"', 'foo\rbar');
       testParse('"foo\\tbar"', 'foo\tbar');
       testParse('"foo\\"bar"', 'foo\"bar');
-      testParse('"foo\\/bar"', 'foo\/bar');
+      testParse('"foo\\/bar"', 'foo/bar', true); // reverse check fails because '/' stringifies as '"/"' (backslach is optional)
       testParse('"foo\\\\bar"', 'foo\\bar');
-      testParse('"foo\\u000Abar"', 'foo\nbar');
-      testParse('"foo\\u000abar"', 'foo\nbar');
-      testParse('"foo\\u2028bar"', 'foo\u2028bar');
+      testParse('"foo\\u000Abar"', 'foo\nbar', true);
+      testParse('"foo\\u000abar"', 'foo\nbar', true);
+      testParse('"foo\\u2028bar"', 'foo\u2028bar', true);
 
       testParseFailToken('"foo\\abar"', 'a', 5);
       testParseFailToken('"foo\\u000Xbar"', 'X', 9);
@@ -47,12 +52,12 @@ describe('parse', function() {
       testParse('-123.45', -123.45);
       testParse('0', 0);
       testParse('0.45', 0.45);
-      testParse('1e2', 100);
-      testParse('1e+2', 100);
-      testParse('1e-2', 0.01);
-      testParse('1.23e2', 123);
-      testParse('1.23e-2', 0.0123);
-      testParse('1.23e12', 1230000000000);
+      testParse('1e2', 100, true);
+      testParse('1e+2', 100, true);
+      testParse('1e-2', 0.01, true);
+      testParse('1.23e2', 123, true);
+      testParse('1.23e-2', 0.0123, true);
+      testParse('1.23e12', 1230000000000, true);
 
       testParseFailToken('123a', 'a', 3);
       testParseFailToken('123.a', 'a', 4);
@@ -68,15 +73,70 @@ describe('parse', function() {
     });
   });
 
-  it('should parse JSON string and generate mappings');
+
+  describe('composite values', function() {
+    it('should parse arrays', function() {
+      testParse('[]', []);
+      testParse('[1]', [1]);
+      testParse('[1.23,"foo",true,false,null]', [1.23,"foo",true,false,null]);
+
+      testParseFailToken('[1,]', ']', 3);
+      testParseFailToken('[1;', ';', 2);
+      testParseFailEnd('[');
+      testParseFailEnd('[1');
+      testParseFailEnd('[1,');
+    });
+
+    it('should parse objects', function() {
+      testParse('{}', {});
+      testParse('{"foo":"bar"}', {foo: 'bar'});
+      testParse('{"foo":1,"bar":2}', {foo: 1, bar: 2});
+
+      testParseFailToken('{\'', '\'', 1);
+      testParseFailToken('{"foo";', ';', 6);
+      testParseFailToken('{"foo":1;', ';', 8);
+
+      testParseFailEnd('{');
+      testParseFailEnd('{"');
+      testParseFailEnd('{"foo');
+      testParseFailEnd('{"foo"');
+      testParseFailEnd('{"foo":');
+      testParseFailEnd('{"foo":"');
+      testParseFailEnd('{"foo":"bar');
+      testParseFailEnd('{"foo":"bar"');
+      testParseFailEnd('{"foo":"bar",');
+    });
+
+    it('should parse nested structures', function() {
+      var data = {
+        foo: [
+          {
+            bar: true
+          },
+          {
+            baz: 123,
+            quux: 'hello'
+          }
+        ]
+      };
+
+      testParse(JSON.stringify(data), data);
+    });
+  })
 
 
-  function testParse(json, expectedData) {
+  function testParse(json, expectedData, skipReverseCheck) {
     var result = jsonMap.parse(json);
     var data = result.data;
     var pointers = result.pointers;
     assert.deepStrictEqual(data, expectedData);
     testResult(json, pointers, data);
+
+    if (!skipReverseCheck) {
+      var reverseResult = jsonMap.stringify(expectedData);
+      assert.strictEqual(json, reverseResult.json);
+      assert.deepStrictEqual(pointers, reverseResult.pointers);
+    }
     return pointers;
   }
 

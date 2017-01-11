@@ -5,29 +5,31 @@ exports.parse = function (source) {
   var line = 0;
   var column = 0;
   var pos = 0;
-  var data = _parse('');
+  var data = _parse('', true);
   return { data: data, pointers: pointers };
 
-  function _parse(ptr) {
+  function _parse(ptr, topLevel) {
     whitespace();
     var data;
     map(ptr, 'value');
-    switch (source[pos]) {
-      case 't': read('true'); data = true; break;
-      case 'f': read('false'); data = false; break;
-      case 'n': read('null'); data = null; break;
+    var char = getChar();
+    switch (char) {
+      case 't': read('rue'); data = true; break;
+      case 'f': read('alse'); data = false; break;
+      case 'n': read('ull'); data = null; break;
       case '"': data = parseString(); break;
-      case '[': data = parseArray(); break;
-      case '{': data = parseObject(); break;
+      case '[': data = parseArray(ptr); break;
+      case '{': data = parseObject(ptr); break;
       default:
-        if ('-0123456789'.indexOf(source[pos]) >= 0)
+        pos--; column--;
+        if ('-0123456789'.indexOf(char) >= 0)
           data = parseNumber();
         else
           unexpectedToken();
     }
     map(ptr, 'valueEnd');
     whitespace();
-    if (pos < source.length) unexpectedToken();
+    if (topLevel && pos < source.length) unexpectedToken();
     return data;
   }
 
@@ -36,7 +38,6 @@ exports.parse = function (source) {
   }
 
   function parseString() {
-    getChar();
     var str = '';
     var char;
     while (true) {
@@ -78,12 +79,50 @@ exports.parse = function (source) {
     return +numStr;
   }
 
-  function parseArray() {
+  function parseArray(ptr) {
+    whitespace();
+    var arr = [];
+    var i = 0;
+    if (getChar() == ']') return arr;
+    pos--; column--;
 
+    while (true) {
+      var itemPtr = ptr + '/' + i;
+      arr.push(_parse(itemPtr));
+      whitespace();
+      var char = getChar();
+      if (char == ']') break;
+      if (char != ',') wasUnexpectedToken();
+      whitespace();
+      i++;
+    }
+    return arr;
   }
 
-  function parseObject() {
+  function parseObject(ptr) {
+    whitespace();
+    var obj = {};
+    if (getChar() == '}') return obj;
+    pos--; column--;
 
+    while (true) {
+      var loc = getLoc();
+      if (getChar() != '"') wasUnexpectedToken();
+      var key = parseString();
+      var propPtr = ptr + '/' + escapeJsonPointer(key);
+      mapLoc(propPtr, 'key', loc);
+      map(propPtr, 'keyEnd');
+      whitespace();
+      if (getChar() != ':') wasUnexpectedToken();
+      whitespace();
+      obj[key] = _parse(propPtr);
+      whitespace();
+      var char = getChar();
+      if (char == '}') break;
+      if (char != ',') wasUnexpectedToken();
+      whitespace();
+    }
+    return obj;
   }
 
   function read(str) {
@@ -136,8 +175,16 @@ exports.parse = function (source) {
   }
 
   function map(ptr, prop) {
+    mapLoc(ptr, prop, getLoc());
+  }
+
+  function mapLoc(ptr, prop, loc) {
     pointers[ptr] = pointers[ptr] || {};
-    pointers[ptr][prop] = {
+    pointers[ptr][prop] = loc;
+  }
+
+  function getLoc() {
+    return {
       line: line,
       column: column,
       pos: pos
