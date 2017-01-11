@@ -21,7 +21,7 @@ exports.parse = function (source) {
       case '[': data = parseArray(ptr); break;
       case '{': data = parseObject(ptr); break;
       default:
-        pos--; column--;
+        backChar();
         if ('-0123456789'.indexOf(char) >= 0)
           data = parseNumber();
         else
@@ -84,7 +84,7 @@ exports.parse = function (source) {
     var arr = [];
     var i = 0;
     if (getChar() == ']') return arr;
-    pos--; column--;
+    backChar();
 
     while (true) {
       var itemPtr = ptr + '/' + i;
@@ -103,7 +103,7 @@ exports.parse = function (source) {
     whitespace();
     var obj = {};
     if (getChar() == '}') return obj;
-    pos--; column--;
+    backChar();
 
     while (true) {
       var loc = getLoc();
@@ -126,13 +126,9 @@ exports.parse = function (source) {
   }
 
   function read(str) {
-    var i = 0;
-    while (i < str.length && (checkUnexpectedEnd() || source[pos] === str[i])) {
-      i++;
-      pos++;
-      column++;
-    }
-    if (i < str.length) unexpectedToken();
+    for (var i=0; i<str.length; i++)
+      if (getChar() !== str[i])
+        wasUnexpectedToken();
   }
 
   function getChar() {
@@ -143,23 +139,23 @@ exports.parse = function (source) {
     return char;
   }
 
+  function backChar() {
+    pos--;
+    column--;
+  }
+
   function getCharCode() {
-    // TODO
     var count = 4;
     var code = 0;
     while (count--) {
       code <<= 4;
-      checkUnexpectedEnd();
-      var char = source[pos].toLowerCase();
+      var char = getChar().toLowerCase();
       if (char >= 'a' && char <= 'f')
-        code += char.charCodeAt() - 'a'.charCodeAt() + 10;
+        code += char.charCodeAt() - A_CODE + 10;
       else if (char >= '0' && char <= '9')
         code += +char;
       else
-        unexpectedToken();
-
-      pos++;
-      column++;
+        wasUnexpectedToken();
     }
     return String.fromCharCode(code);
   }
@@ -196,8 +192,7 @@ exports.parse = function (source) {
   }
 
   function wasUnexpectedToken() {
-    pos--;
-    column--;
+    backChar();
     unexpectedToken();
   }
 
@@ -217,6 +212,8 @@ var escapedChars = {
   '/': '/',
   '\\': '\\'
 };
+
+var A_CODE = 'a'.charCodeAt();
 
 
 exports.stringify = function (data, _, whitespace) {
