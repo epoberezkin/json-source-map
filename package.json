@@ -4,8 +4,10 @@
   "description": "Parse/stringify JSON and provide source-map for JSON-pointers to all nodes",
   "main": "index.js",
   "scripts": {
-    "test-spec": "mocha spec.js -R spec",
-    "test": "nyc npm run test-spec"
+    "eslint": "eslint index.js spec",
+    "test-spec": "mocha spec -R spec",
+    "test-debug": "mocha spec -R spec --debug-brk",
+    "test": "npm run eslint && nyc npm run test-spec"
   },
   "repository": {
     "type": "git",
@@ -26,6 +28,7 @@
   "homepage": "https://github.com/epoberezkin/json-source-map#readme",
   "devDependencies": {
     "coveralls": "^2.11.15",
+    "eslint": "^3.13.1",
     "json-pointer": "^0.6.0",
     "mocha": "^3.2.0",
     "nyc": "^10.0.0",
@@ -33,7 +36,7 @@
   },
   "nyc": {
     "exclude": [
-      "spec.js"
+      "spec"
     ],
     "reporter": [
       "lcov",
