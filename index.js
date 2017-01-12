@@ -50,7 +50,17 @@ exports.parse = function (source) {
   }
 
   function whitespace() {
-    // TODO scan whitespace
+    loop:
+      while (pos < source.length) {
+        switch (source[pos]) {
+          case ' ': column++; break;
+          case '\t': column += 4; break;
+          case '\r': column = 0; break;
+          case '\n': column = 0; line++; break;
+          default: break loop;
+        }
+        pos++;
+      }
   }
 
   function parseString() {
@@ -220,17 +230,34 @@ exports.parse = function (source) {
 
 exports.stringify = function (data, _, whitespace) {
   if (!validType(data)) return;
+  var wsLine = 0;
+  var wsPos, wsColumn;
   switch (typeof whitespace) {
     case 'number':
-      var wsLen = whitespace > 10
+      var len = whitespace > 10
                   ? 10
                   : whitespace < 0
                     ? 0
                     : Math.floor(whitespace);
-      whitespace = wsLen && repeat(wsLen, ' ');
+      whitespace = len && repeat(len, ' ');
+      wsPos = len;
+      wsColumn = len;
       break;
     case 'string':
       whitespace = whitespace.slice(0, 10);
+      wsPos = 0;
+      wsColumn = 0;
+      for (var j=0; j<whitespace.length; j++) {
+        var char = whitespace[j];
+        switch (char) {
+          case ' ': wsColumn++; break;
+          case '\t': wsColumn += 4; break;
+          case '\r': wsColumn = 0; break;
+          case '\n': wsColumn = 0; wsLine++; break;
+          default: throw new Error('whitespace characters not allowed in JSON');
+        }
+        wsPos++;
+      }
       break;
     default:
       whitespace = undefined;
@@ -321,11 +348,19 @@ exports.stringify = function (data, _, whitespace) {
 
   function indent(lvl) {
     if (whitespace) {
-      line++;
-      var ws = lvl * whitespace.length;
-      column = ws;
-      pos += ws + 1;
       json += '\n' + repeat(lvl, whitespace);
+      line++;
+      column = 0;
+      while (lvl--) {
+        if (wsLine) {
+          line += wsLine;
+          column = wsColumn;
+        } else {
+          column += wsColumn;
+        }
+        pos += wsPos;
+      }
+      pos += 1; // \n character
     }
   }
 

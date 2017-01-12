@@ -6,11 +6,137 @@ var jsonPointer = require('json-pointer');
 
 
 describe('parse', function() {
+  describe('mappings', function() {
+    it('should parse JSON and generate mappings', function() {
+      var json = '{\n\
+  "foo": [\n\
+    {\n\
+      "bar": true\n\
+    },\n\
+    {\n\
+      "baz": 123,\n\
+      "quux": "hello"\n\
+    }\n\
+  ]\n\
+}';
+
+      var pointers = testParse(json, JSON.parse(json), null, 2);
+      assert.deepStrictEqual(pointers, {
+        '': {
+          value: { line: 0, column: 0, pos: 0 },
+          valueEnd: { line: 10, column: 1, pos: 101 }
+        },
+        '/foo': {
+          key: { line: 1, column: 2, pos: 4 },
+          keyEnd: { line: 1, column: 7, pos: 9 },
+          value: { line: 1, column: 9, pos: 11 },
+          valueEnd: { line: 9, column: 3, pos: 99 }
+        },
+        '/foo/0': {
+          value: { line: 2, column: 4, pos: 17 },
+          valueEnd: { line: 4, column: 5, pos: 42 }
+        },
+        '/foo/0/bar': {
+          key: { line: 3, column: 6, pos: 25 },
+          keyEnd: { line: 3, column: 11, pos: 30 },
+          value: { line: 3, column: 13, pos: 32 },
+          valueEnd: { line: 3, column: 17, pos: 36 }
+        },
+        '/foo/1': {
+          value: { line: 5, column: 4, pos: 48 },
+          valueEnd: { line: 8, column: 5, pos: 95 }
+        },
+        '/foo/1/baz': {
+          key: { line: 6, column: 6, pos: 56 },
+          keyEnd: { line: 6, column: 11, pos: 61 },
+          value: { line: 6, column: 13, pos: 63 },
+          valueEnd: { line: 6, column: 16, pos: 66 }
+        },
+        '/foo/1/quux': {
+          key: { line: 7, column: 6, pos: 74 },
+          keyEnd: { line: 7, column: 12, pos: 80 },
+          value: { line: 7, column: 14, pos: 82 },
+          valueEnd: { line: 7, column: 21, pos: 89 }
+        }
+      });
+    });
+
+    it('should support whitespace with tabs', function () {
+      var json = '{\n\
+\t"foo": [\n\
+\t\t{\n\
+\t\t\t"bar": true\n\
+\t\t}\n\
+\t]\n\
+}';
+
+      var pointers = testParse(json, JSON.parse(json), null, '\t');
+      assert.deepStrictEqual(pointers, {
+        '': {
+          value: { line: 0, column: 0, pos: 0 },
+          valueEnd: { line: 6, column: 1, pos: 39 }
+        },
+        '/foo': {
+          key: { line: 1, column: 4, pos: 3 },
+          keyEnd: { line: 1, column: 9, pos: 8 },
+          value: { line: 1, column: 11, pos: 10 },
+          valueEnd: { line: 5, column: 5, pos: 37 }
+        },
+        '/foo/0': {
+          value: { line: 2, column: 8, pos: 14 },
+          valueEnd: { line: 4, column: 9, pos: 34 }
+        },
+        '/foo/0/bar': {
+          key: { line: 3, column: 12, pos: 19 },
+          keyEnd: { line: 3, column: 17, pos: 24 },
+          value: { line: 3, column: 19, pos: 26 },
+          valueEnd: { line: 3, column: 23, pos: 30 }
+        }
+      });
+    });
+
+    it('should support whitespace with CRs', function () {
+      var json = '{\r\n\
+  "foo": [\r\n\
+    {\r\n\
+      "bar": true\r\n\
+    }\r\n\
+  ]\r\n\
+}';
+
+      var pointers = testParse(json, JSON.parse(json), true);
+      assert.deepStrictEqual(pointers, {
+        '': {
+          value: { line: 0, column: 0, pos: 0 },
+          valueEnd: { line: 6, column: 1, pos: 54 }
+        },
+        '/foo': {
+          key: { line: 1, column: 2, pos: 5 },
+          keyEnd: { line: 1, column: 7, pos: 10 },
+          value: { line: 1, column: 9, pos: 12 },
+          valueEnd: { line: 5, column: 3, pos: 51 }
+        },
+        '/foo/0': {
+          value: { line: 2, column: 4, pos: 19 },
+          valueEnd: { line: 4, column: 5, pos: 46 }
+        },
+        '/foo/0/bar': {
+          key: { line: 3, column: 6, pos: 28 },
+          keyEnd: { line: 3, column: 11, pos: 33 },
+          value: { line: 3, column: 13, pos: 35 },
+          valueEnd: { line: 3, column: 17, pos: 39 }
+        }
+      });
+    });
+  });
+
+
   describe('simple values', function() {
     it('should throw exception on empty line/whitespace', function() {
       testParseFailEnd('');
-      // testParseFailEnd(' ');
+      testParseFailEnd(' ');
     });
+
 
     it('should parse true/false/null', function() {
       testParse('true', true);
@@ -20,7 +146,7 @@ describe('parse', function() {
       testParseFailToken('ture', 'u', 1);
       testParseFailToken('truz', 'z', 3);
       testParseFailToken('truetrue', 't', 4);
-      // testParseFailToken('true true', 't', 5);
+      testParseFailToken('true true', 't', 5);
       testParseFailToken('undefined', 'u', 0);
       testParseFailEnd('tru');
     });
@@ -42,7 +168,7 @@ describe('parse', function() {
       testParseFailToken('"foo\\abar"', 'a', 5);
       testParseFailToken('"foo\\u000Xbar"', 'X', 9);
       testParseFailToken('"foo"true', 't', 5);
-      // testParseFailToken('"foo" "foo"', '"', 6);
+      testParseFailToken('"foo" "foo"', '"', 6);
       testParseFailEnd('"foo');
     });
 
@@ -121,11 +247,12 @@ describe('parse', function() {
       };
 
       testParse(JSON.stringify(data), data);
+      testParse(JSON.stringify(data, null, 2), data, null, 2);
     });
   });
 
 
-  function testParse(json, expectedData, skipReverseCheck) {
+  function testParse(json, expectedData, skipReverseCheck, whitespace) {
     var result = jsonMap.parse(json);
     var data = result.data;
     var pointers = result.pointers;
@@ -133,7 +260,7 @@ describe('parse', function() {
     testResult(json, pointers, data);
 
     if (!skipReverseCheck) {
-      var reverseResult = jsonMap.stringify(expectedData);
+      var reverseResult = jsonMap.stringify(expectedData, null, whitespace);
       assert.strictEqual(json, reverseResult.json);
       assert.deepStrictEqual(pointers, reverseResult.pointers);
     }
@@ -175,11 +302,7 @@ describe('stringify', function() {
       ]
     };
 
-    var result = jsonMap.stringify(data, null, 2);
-    var json = result.json;
-    var pointers = result.pointers;
-
-    testResult(json, pointers, data);
+    var pointers = testStringify(data, data, null, 2);
     assert.deepEqual(pointers, {
       '': {
         value: { line: 0, column: 0, pos: 0 },
@@ -250,13 +373,12 @@ describe('stringify', function() {
       'esc/aped~': true
     };
 
-    var result = jsonMap.stringify(data, null, '  ');
-    var json = result.json;
-    var pointers = result.pointers;
+    var reverseData = copy(data);
+    reverseData.date = '2017-01-09T08:50:13.064Z';
+    reverseData.custom = 'custom';
 
-    data.date = '2017-01-09T08:50:13.064Z';
-    data.custom = 'custom';
-    testResult(json, pointers, data);
+    var pointers = testStringify(data, reverseData, null, '  ');
+
     assert.deepEqual(pointers, {
       '': {
         value: { line: 0, column: 0, pos: 0 },
@@ -328,11 +450,8 @@ describe('stringify', function() {
       ]
     };
 
-    var result = jsonMap.stringify(data);
-    var json = result.json;
-    var pointers = result.pointers;
+    var pointers = testStringify(data);
 
-    testResult(json, pointers, data);
     assert.deepStrictEqual(pointers, {
       '': {
         value: { line: 0, column: 0, pos: 0 },
@@ -422,10 +541,51 @@ describe('stringify', function() {
     );
   });
 
+  it('should stringify with CR/LF whitespace', function() {
+    var data = {
+      "foo": [
+        {
+          "bar": 1
+        },
+        {
+          "baz": 2,
+          "quux": 3
+        }
+      ]
+    };
+
+    testStringify(data, data, null, '\r');
+    testStringify(data, data, null, '\n');
+    testStringify(data, data, null, '\r\n');
+  });
+
+  it('should throw if whitespace not allowed in JSON is used', function() {
+    var data = { foo: 'bar' };
+
+    assert.throws(function() {
+      jsonMap.stringify(data, null, '$$');
+    });
+  });
+
 
   function equal(objects) {
     for (var i=1; i<objects.length; i++)
       assert.deepStrictEqual(objects[0], objects[i]);
+  }
+
+  function testStringify(data, reverseData, skipReverseCheck, whitespace) {
+    if (reverseData === undefined) reverseData = data;
+    var result = jsonMap.stringify(data, null, whitespace);
+    var json = result.json;
+    var pointers = result.pointers;
+
+    testResult(json, pointers, reverseData);
+    if (!skipReverseCheck) {
+      var reverseResult = jsonMap.parse(json);
+      assert.deepStrictEqual(reverseData, reverseResult.data);
+      assert.deepStrictEqual(pointers, reverseResult.pointers);
+    }
+    return pointers;
   }
 });
 
@@ -445,4 +605,10 @@ function testResult(json, pointers, data) {
       jsonPointer.get(data, ptr) // value
     );
   }
+}
+
+function copy(o, to) {
+  to = to || {};
+  for (var key in o) to[key] = o[key];
+  return to;
 }
