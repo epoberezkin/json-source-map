@@ -1,6 +1,6 @@
 {
   "name": "json-source-map",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Parse/stringify JSON and provide source-map for JSON-pointers to all nodes",
   "main": "index.js",
   "scripts": {
