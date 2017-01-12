@@ -13,9 +13,20 @@ npm install json-source-map
 ```
 
 
+## Possible use cases
+
+#### Source maps
+
+When a domain-specific language that compiles to JavaScript uses JSON as a format, this module can be used as a replacement for standard JSON to simplify generation of source maps.
+
+#### Editing forms/JSON
+
+When a form also allows to edit JSON representation of data on the same screen, this module can be used to sinchronise navigation in JSON and in the form.
+
+
 ## Usage
 
-### Stringify
+#### Stringify
 
 ```javascript
 var jsonMap = require('json-source-map');
@@ -46,7 +57,7 @@ pointers:
 ```
 
 
-### Parse
+#### Parse
 
 ```javascript
 var result = jsonMap.parse('{ "foo": "bar" }');
@@ -75,15 +86,15 @@ pointers:
 
 ## API
 
-##### .parse(String json) -&gt; Object;
+#### .parse(String json) -&gt; Object;
 
 Parses JSON string. Returns object with properties:
 - _data_: parsed data.
-- _pointers_: an object where each key is a JSON-pointer, each corresponding value is a mapping object.
+- _pointers_: an object where each key is a JSON pointer ([RFC 6901](https://tools.ietf.org/html/rfc6901)), each corresponding value is a mapping object.
 
 Mapping object has properties:
-- _key_: location object (see below) of the beginning of the key in JSON string. This property is only present if parent is an object (rather than array).
-- _keyEnd_: location of the end of the key in JSON string. This property is only present if parent is an object.
+- _key_: location object (see below) of the beginning of the key in JSON string. This property is only present if parent data is an object (rather than array).
+- _keyEnd_: location of the end of the key in JSON string. This property is only present if parent data is an object.
 - _value_: location of the beginning of the value in JSON string.
 - _valueEnd_: location of the end of the value in JSON string.
 
@@ -95,14 +106,14 @@ Location object has properties (zero-based numbers):
 Whitespace:
 - the only character that increases line number in mappings is line feed ('\n'), so if your JSON string has '\r\n' sequence, it will still be counted as one line,
 - both '\r' and '\n' are counted as a character when determining `pos` (it is possible to slice sections of JSON string using `pos` property), but `column` counter is reset when `r` or `n` is encountered,
-- tabs ('\t') are counted as four spaces when determining `column` but as a single character for `pos` (it is possible to slice JSON sections).
+- tabs ('\t') are counted as four spaces when determining `column` but as a single character for `pos`.
 
 Comparison with the standard `JSON.parse`:
-- when it is not possible to parse JSON SyntaxError exceptions with exactly the same message is thrown,
+- when it is not possible to parse JSON, a SyntaxError exception with exactly the same message is thrown,
 - `reviver` parameter of [JSON.parse](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/parse#Using_the_reviver_parameter) is not supported.
 
 
-##### .stringify(Any data, Any _, String|Number space) -&gt; Object;
+#### .stringify(Any data, Any _, String|Number space) -&gt; Object;
 
 Stringifies JavaScript data. Returns object with properties:
 - _json_: JSON string - stringified data.
@@ -110,7 +121,7 @@ Stringifies JavaScript data. Returns object with properties:
 
 Comparison with the standard `JSON.stringify`:
 - `replacer` parameter of [JSON.stringify](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify#The_replacer_parameter) is not supported, but its position is reserved.
-- `space` parameter is supported, but if it is a string, it may only contain characters space, tab ('\t'), caret return ('\r') and line feed ('\n') - using any other caracter would throw an exception.
+- `space` parameter is supported, but if it is a string, it may only contain characters space, tab ('\t'), caret return ('\r') and line feed ('\n') - using any other caracter throws an exception.
 
 
 ## License
