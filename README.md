@@ -86,7 +86,7 @@ pointers:
 
 ## API
 
-#### .parse(String json) -&gt; Object;
+#### .parse(String json, Any _, Object options) -&gt; Object;
 
 Parses JSON string. Returns object with properties:
 - _data_: parsed data.
@@ -110,10 +110,11 @@ Whitespace:
 
 Comparison with the standard `JSON.parse`:
 - when it is not possible to parse JSON, a SyntaxError exception with exactly the same message is thrown,
-- `reviver` parameter of [JSON.parse](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/parse#Using_the_reviver_parameter) is not supported.
+- `reviver` parameter of [JSON.parse](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/parse#Using_the_reviver_parameter) is not supported, but its position is reserved.
+- supports parsing large integers as [BigInt](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt) (with the option `bigint: true`).
 
 
-#### .stringify(Any data, Any _, String|Number space) -&gt; Object;
+#### .stringify(Any data, Any _, String|Number|Object space) -&gt; Object;
 
 Stringifies JavaScript data. Returns object with properties:
 - _json_: JSON string - stringified data.
@@ -121,7 +122,15 @@ Stringifies JavaScript data. Returns object with properties:
 
 Comparison with the standard `JSON.stringify`:
 - `replacer` parameter of [JSON.stringify](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify#The_replacer_parameter) is not supported, but its position is reserved.
-- `space` parameter is supported, but if it is a string, it may only contain characters space, tab ('\t'), caret return ('\r') and line feed ('\n') - using any other caracter throws an exception.
+- `space` parameter is supported, but if it is a string, it may only contain characters space, tab ('\t'), caret return ('\r') and line feed ('\n') - using any other caracter throws an exception. If this parameter is an object, see [Options](#options)
+
+
+#### Options
+
+Both method access options as an optional 3rd parameter.
+
+- _space_: only used by `stringify` method.
+- _bigint_: parse large integers as [BigInt](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt).
 
 
 ## License
