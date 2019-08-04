@@ -1,7 +1,10 @@
 rules:
   no-console: 0
   quotes: 0
+  new-cap: 0
 globals:
   describe: false
   it: false
   Symbol: false
+  BigInt: false
+  

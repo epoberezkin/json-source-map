@@ -158,7 +158,7 @@ describe('parse', function() {
       testParse('"foo\\nbar"', 'foo\nbar');
       testParse('"foo\\rbar"', 'foo\rbar');
       testParse('"foo\\tbar"', 'foo\tbar');
-      testParse('"foo\\"bar"', 'foo\"bar');
+      testParse('"foo\\"bar"', 'foo"bar');
       testParse('"foo\\/bar"', 'foo/bar', true); // reverse check fails because '/' stringifies as '"/"' (backslach is optional)
       testParse('"foo\\\\bar"', 'foo\\bar');
       testParse('"foo\\u000Abar"', 'foo\nbar', true);
@@ -435,6 +435,10 @@ describe('stringify', function() {
     });
   });
 
+  it('should stringify BigInt', function() {
+    testStringify(BigInt(100), 100);
+  });
+
   it('should return undefined if data is not a valid type', function() {
     assert.strictEqual(jsonMap.stringify(undefined), undefined);
     assert.strictEqual(jsonMap.stringify(function(){}), undefined);
@@ -567,6 +571,11 @@ describe('stringify', function() {
     });
   });
 
+  it('should support whitespace as option', function() {
+    var data = { foo: 'bar' };
+    var result = jsonMap.stringify(data, null, {space: '  '});
+    assert.equal(result.json, '{\n  "foo": "bar"\n}');
+  });
 
   function equal(objects) {
     for (var i=1; i<objects.length; i++)

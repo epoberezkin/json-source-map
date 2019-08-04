@@ -28,7 +28,7 @@
   "homepage": "https://github.com/epoberezkin/json-source-map#readme",
   "devDependencies": {
     "coveralls": "^2.11.15",
-    "eslint": "^3.13.1",
+    "eslint": "^6.1.0",
     "json-pointer": "^0.6.0",
     "mocha": "^3.2.0",
     "nyc": "^10.0.0",
