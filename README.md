@@ -103,6 +103,9 @@ Location object has properties (zero-based numbers):
 - _column_: column number in JSON string (from the beginning of line).
 - _pos_: character position in JSON file (from the beginning of JSON string).
 
+Options:
+- _bigint_: parse large integers as [BigInt](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt).
+
 Whitespace:
 - the only character that increases line number in mappings is line feed ('\n'), so if your JSON string has '\r\n' sequence, it will still be counted as one line,
 - both '\r' and '\n' are counted as a character when determining `pos` (it is possible to slice sections of JSON string using `pos` property), but `column` counter is reset when `r` or `n` is encountered,
@@ -122,15 +125,10 @@ Stringifies JavaScript data. Returns object with properties:
 
 Comparison with the standard `JSON.stringify`:
 - `replacer` parameter of [JSON.stringify](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify#The_replacer_parameter) is not supported, but its position is reserved.
-- `space` parameter is supported, but if it is a string, it may only contain characters space, tab ('\t'), caret return ('\r') and line feed ('\n') - using any other caracter throws an exception. If this parameter is an object, see [Options](#options)
+- `space` parameter is supported, but if it is a string, it may only contain characters space, tab ('\t'), caret return ('\r') and line feed ('\n') - using any other caracter throws an exception. If this parameter is an object, it is options.
 
-
-#### Options
-
-Both method access options as an optional 3rd parameter.
-
-- _space_: only used by `stringify` method.
-- _bigint_: parse large integers as [BigInt](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt).
+Options:
+- _space_: same as `space` parameter.
 
 
 ## License

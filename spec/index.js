@@ -197,6 +197,47 @@ describe('parse', function() {
       testParseFailEnd('1.');
       testParseFailEnd('1.23e');
     });
+
+    describe('option "bigint"', function() {
+      it('should parse large integers as BigInt with option bigint: true', function() {
+        testParseBigInt('' + (Number.MAX_SAFE_INTEGER + 1));
+        testParseBigInt('' + (Number.MIN_SAFE_INTEGER - 1));
+        testParseBigInt('10000000000000000');
+        testParseBigInt('-10000000000000000');
+      });
+
+      it('should parse large integers as Number without option bigint', function() {
+        testParseNumber('' + (Number.MAX_SAFE_INTEGER + 1), false);
+        testParseNumber('' + (Number.MIN_SAFE_INTEGER - 1), false);
+        testParseNumber('10000000000000000', false);
+        testParseNumber('-10000000000000000', false);
+      });
+
+      it('should parse small integers and non-integers as Number with option bigint: true', function() {
+        testParseNumber('' + Number.MAX_SAFE_INTEGER);
+        testParseNumber('' + Number.MIN_SAFE_INTEGER);
+        testParseNumber('1e16');
+        testParseNumber('-1e16');
+        testParseNumber('10000000000000000.1');
+        testParseNumber('-10000000000000000.1');
+        testParseNumber('10000');
+        testParseNumber('-10000');
+        testParseNumber('1.1');
+        testParseNumber('-1.1');
+      });
+
+      function testParseBigInt(str) {
+        var result = jsonMap.parse(str, null, {bigint: true});
+        assert.strictEqual(typeof result.data, 'bigint');
+        assert.strictEqual(result.data, BigInt(str));
+      }
+
+      function testParseNumber(str, opt=true) {
+        var result = jsonMap.parse(str, null, {bigint: opt});
+        assert.strictEqual(typeof result.data, 'number');
+        assert.strictEqual(result.data, +str);
+      }
+    });
   });
 
 

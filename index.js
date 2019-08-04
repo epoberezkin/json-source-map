@@ -14,11 +14,12 @@ var escapedChars = {
 var A_CODE = 'a'.charCodeAt();
 
 
-exports.parse = function (source) {
+exports.parse = function (source, _, options) {
   var pointers = {};
   var line = 0;
   var column = 0;
   var pos = 0;
+  var bigint = options && options.bigint && typeof BigInt != 'undefined';
   return {
     data: _parse('', true),
     pointers: pointers
@@ -87,22 +88,29 @@ exports.parse = function (source) {
 
   function parseNumber() {
     var numStr = '';
+    var integer = true;
     if (source[pos] == '-') numStr += getChar();
 
     numStr += source[pos] == '0'
               ? getChar()
               : getDigits();
 
-    if (source[pos] == '.')
+    if (source[pos] == '.') {
       numStr += getChar() + getDigits();
+      integer = false;
+    }
 
     if (source[pos] == 'e' || source[pos] == 'E') {
       numStr += getChar();
       if (source[pos] == '+' || source[pos] == '-') numStr += getChar();
       numStr += getDigits();
+      integer = false;
     }
 
-    return +numStr;
+    var result = +numStr;
+    return bigint && integer && (result > Number.MAX_SAFE_INTEGER || result < Number.MIN_SAFE_INTEGER)
+            ? BigInt(numStr)
+            : result;
   }
 
   function parseArray(ptr) {
