@@ -1,3 +1,5 @@
+parserOptions:
+  ecmaVersion: 6
 extends: eslint:recommended
 env:
   node: true
@@ -7,7 +9,7 @@ rules:
   no-shadow: 1
   block-scoped-var: 2
   callback-return: 2
-  complexity: [2, 13]
+  complexity: [2, 15]
   curly: [2, multi-or-nest, consistent]
   dot-location: [2, property]
   dot-notation: 2
@@ -27,3 +29,5 @@ rules:
   valid-jsdoc: [2, requireReturn: false]
 globals:
   BigInt: false
+  Map: true
+  Set: true

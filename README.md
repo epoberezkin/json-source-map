@@ -1,7 +1,7 @@
 # json-source-map
 Parse/stringify JSON and provide source-map for JSON-pointers to all nodes.
 
-NEW: BigInt support.
+NEW: supports BigInt, Maps, Sets and Typed arrays.
 
 [![Build Status](https://travis-ci.org/epoberezkin/json-source-map.svg?branch=master)](https://travis-ci.org/epoberezkin/json-source-map)
 [![npm version](https://badge.fury.io/js/json-source-map.svg)](https://www.npmjs.com/package/json-source-map)
@@ -131,6 +131,7 @@ Comparison with the standard `JSON.stringify`:
 
 Options:
 - _space_: same as `space` parameter.
+- _es6_: stringify ES6 Maps, Sets and Typed arrays (as JSON arrays).
 
 
 ## License

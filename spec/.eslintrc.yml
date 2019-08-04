@@ -1,5 +1,3 @@
-parserOptions:
-  ecmaVersion: 6
 rules:
   no-console: 0
   quotes: 0
@@ -7,3 +5,4 @@ globals:
   describe: false
   it: false
   Symbol: false
+  Int8Array: false
