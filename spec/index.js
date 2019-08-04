@@ -618,14 +618,51 @@ describe('stringify', function() {
     assert.equal(result.json, '{\n  "foo": "bar"\n}');
   });
 
+  describe('option es6', function() {
+    it('should strigify Maps', function() {
+      var data = new Map;
+      testStringify(data, {}, false, {es6: true});
+
+      data.set('foo', 1);
+      data.set('bar', 2);
+      testStringify(data, {foo: 1, bar: 2}, false, {es6: true});
+      testStringify(data, {foo: 1, bar: 2}, false, {es6: true, space: 2});
+    });
+
+    it('should strigify Sets', function() {
+      var data = new Set;
+      testStringify(data, {}, false, {es6: true});
+
+      data.add('foo');
+      data.add('bar');
+      testStringify(data, {foo: true, bar: true}, false, {es6: true});
+      testStringify(data, {foo: true, bar: true}, false, {es6: true, space: 2});
+    });
+
+    it('should strigify Typed arrays', function() {
+      var data = new Int8Array(2);
+      testStringify(data, [0, 0], false, {es6: true});
+
+      data[0] = 1;
+      data[1] = 2;
+      testStringify(data, [1, 2], false, {es6: true});
+      testStringify(data, [1, 2], false, {es6: true, space: 2});
+    });
+
+    it('should still strigify Objects', function() {
+      testStringify({}, {}, false, {es6: true});
+      testStringify({foo: 1, bar: 2}, {foo: 1, bar: 2}, false, {es6: true});
+    });
+  });
+
   function equal(objects) {
     for (var i=1; i<objects.length; i++)
       assert.deepStrictEqual(objects[0], objects[i]);
   }
 
-  function testStringify(data, reverseData, skipReverseCheck, whitespace) {
+  function testStringify(data, reverseData, skipReverseCheck, options) {
     if (reverseData === undefined) reverseData = data;
-    var result = jsonMap.stringify(data, null, whitespace);
+    var result = jsonMap.stringify(data, null, options);
     var json = result.json;
     var pointers = result.pointers;
 

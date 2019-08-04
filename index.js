@@ -279,6 +279,7 @@ exports.stringify = function (data, _, options) {
   var line = 0;
   var column = 0;
   var pos = 0;
+  var es6 = options && options.es6 && typeof Map == 'function';
   _stringify(data, 0, '');
   return {
     json: json,
@@ -295,14 +296,24 @@ exports.stringify = function (data, _, options) {
       case 'string':
         out(quoted(_data)); break;
       case 'object':
-        if (_data === null)
+        if (_data === null) {
           out('null');
-        else if (typeof _data.toJSON == 'function')
+        } else if (typeof _data.toJSON == 'function') {
           out(quoted(_data.toJSON()));
-        else if (Array.isArray(_data))
+        } else if (Array.isArray(_data)) {
           stringifyArray();
-        else
+        } else if (es6) {
+          if (_data.constructor.BYTES_PER_ELEMENT)
+            stringifyArray();
+          else if (_data instanceof Map)
+            stringifyMapSet();
+          else if (_data instanceof Set)
+            stringifyMapSet(true);
+          else
+            stringifyObject();
+        } else {
           stringifyObject();
+        }
     }
     map(ptr, 'valueEnd');
 
@@ -334,6 +345,34 @@ exports.stringify = function (data, _, options) {
           var value = _data[key];
           if (validType(value)) {
             if (i) out(',');
+            var propPtr = ptr + '/' + escapeJsonPointer(key);
+            indent(propLvl);
+            map(propPtr, 'key');
+            out(quoted(key));
+            map(propPtr, 'keyEnd');
+            out(':');
+            if (whitespace) out(' ');
+            _stringify(value, propLvl, propPtr);
+          }
+        }
+        indent(lvl);
+        out('}');
+      } else {
+        out('{}');
+      }
+    }
+
+    function stringifyMapSet(isSet) {
+      if (_data.size) {
+        out('{');
+        var propLvl = lvl + 1;
+        var first = true;
+        for (var item of _data.entries()) {
+          var key = item[0];
+          var value = isSet ? true : item[1];
+          if (validType(value)) {
+            if (!first) out(',');
+            first = false;
             var propPtr = ptr + '/' + escapeJsonPointer(key);
             indent(propLvl);
             map(propPtr, 'key');
