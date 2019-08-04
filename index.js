@@ -14,11 +14,12 @@ var escapedChars = {
 var A_CODE = 'a'.charCodeAt();
 
 
-exports.parse = function (source) {
+exports.parse = function (source, _, options) {
   var pointers = {};
   var line = 0;
   var column = 0;
   var pos = 0;
+  var bigint = options && options.bigint && typeof BigInt != 'undefined';
   return {
     data: _parse('', true),
     pointers: pointers
@@ -87,22 +88,29 @@ exports.parse = function (source) {
 
   function parseNumber() {
     var numStr = '';
+    var integer = true;
     if (source[pos] == '-') numStr += getChar();
 
     numStr += source[pos] == '0'
               ? getChar()
               : getDigits();
 
-    if (source[pos] == '.')
+    if (source[pos] == '.') {
       numStr += getChar() + getDigits();
+      integer = false;
+    }
 
     if (source[pos] == 'e' || source[pos] == 'E') {
       numStr += getChar();
       if (source[pos] == '+' || source[pos] == '-') numStr += getChar();
       numStr += getDigits();
+      integer = false;
     }
 
-    return +numStr;
+    var result = +numStr;
+    return bigint && integer && (result > Number.MAX_SAFE_INTEGER || result < Number.MIN_SAFE_INTEGER)
+            ? BigInt(numStr)
+            : result;
   }
 
   function parseArray(ptr) {
@@ -228,10 +236,13 @@ exports.parse = function (source) {
 };
 
 
-exports.stringify = function (data, _, whitespace) {
+exports.stringify = function (data, _, options) {
   if (!validType(data)) return;
   var wsLine = 0;
   var wsPos, wsColumn;
+  var whitespace = typeof options == 'object'
+                    ? options.space
+                    : options;
   switch (typeof whitespace) {
     case 'number':
       var len = whitespace > 10
@@ -278,6 +289,7 @@ exports.stringify = function (data, _, whitespace) {
     map(ptr, 'value');
     switch (typeof _data) {
       case 'number':
+      case 'bigint':
       case 'boolean':
         out('' + _data); break;
       case 'string':
@@ -379,7 +391,7 @@ exports.stringify = function (data, _, whitespace) {
 };
 
 
-var VALID_TYPES = ['number', 'boolean', 'string', 'object'];
+var VALID_TYPES = ['number', 'bigint', 'boolean', 'string', 'object'];
 function validType(data) {
   return VALID_TYPES.indexOf(typeof data) >= 0;
 }
