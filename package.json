@@ -18,7 +18,12 @@
     "parse",
     "stringify",
     "json-pointer",
-    "source-map"
+    "source-map",
+    "BigInt",
+    "ES6",
+    "Map",
+    "Set",
+    "TypedArray"
   ],
   "author": "Evgeny Poberezkin",
   "license": "MIT",
