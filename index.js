@@ -367,7 +367,10 @@ exports.stringify = function (data, _, options) {
         out('{');
         var propLvl = lvl + 1;
         var first = true;
-        for (var item of _data.entries()) {
+        var entries = _data.entries();
+        var entry = entries.next();
+        while (!entry.done) {
+          var item = entry.value;
           var key = item[0];
           var value = isSet ? true : item[1];
           if (validType(value)) {
@@ -382,6 +385,7 @@ exports.stringify = function (data, _, options) {
             if (whitespace) out(' ');
             _stringify(value, propLvl, propPtr);
           }
+          entry = entries.next();
         }
         indent(lvl);
         out('}');
