@@ -95,6 +95,40 @@ describe('parse', function() {
       });
     });
 
+    it.only('should support whitespace with tabs and custom tabWidth', function () {
+      var json = '{\n\
+\t"foo": [\n\
+\t\t{\n\
+\t\t\t"bar": true\n\
+\t\t}\n\
+\t]\n\
+}';
+
+      var pointers = testParse(json, JSON.parse(json), null, '\t', {tabWidth: 1});
+      assert.deepStrictEqual(pointers, {
+        '': {
+          value: { line: 0, column: 0, pos: 0 },
+          valueEnd: { line: 6, column: 1, pos: 39 }
+        },
+        '/foo': {
+          key: { line: 1, column: 1, pos: 3 },
+          keyEnd: { line: 1, column: 6, pos: 8 },
+          value: { line: 1, column: 8, pos: 10 },
+          valueEnd: { line: 5, column: 2, pos: 37 }
+        },
+        '/foo/0': {
+          value: { line: 2, column: 2, pos: 14 },
+          valueEnd: { line: 4, column: 3, pos: 34 }
+        },
+        '/foo/0/bar': {
+          key: { line: 3, column: 3, pos: 19 },
+          keyEnd: { line: 3, column: 8, pos: 24 },
+          value: { line: 3, column: 10, pos: 26 },
+          valueEnd: { line: 3, column: 14, pos: 30 }
+        }
+      });
+    });
+
     it('should support whitespace with CRs', function () {
       var json = '{\r\n\
   "foo": [\r\n\
@@ -293,15 +327,17 @@ describe('parse', function() {
   });
 
 
-  function testParse(json, expectedData, skipReverseCheck, whitespace) {
-    var result = jsonMap.parse(json);
+  function testParse(json, expectedData, skipReverseCheck, whitespace, options) {
+    var result = jsonMap.parse(json, null, options);
     var data = result.data;
     var pointers = result.pointers;
     assert.deepStrictEqual(data, expectedData);
     testResult(json, pointers, data);
 
     if (!skipReverseCheck) {
-      var reverseResult = jsonMap.stringify(expectedData, null, whitespace);
+      var reverseResult = jsonMap.stringify(expectedData, null, {
+        space: whitespace, tabWidth: options && options.tabWidth
+      });
       assert.strictEqual(json, reverseResult.json);
       assert.deepStrictEqual(pointers, reverseResult.pointers);
     }
