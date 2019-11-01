@@ -20,6 +20,7 @@ exports.parse = function (source, _, options) {
   var column = 0;
   var pos = 0;
   var bigint = options && options.bigint && typeof BigInt != 'undefined';
+  var tabWidth = (options && options.tabWidth && typeof options.tabWidth === 'number')  ? options.tabWidth : 4;
   return {
     data: _parse('', true),
     pointers: pointers
@@ -55,7 +56,7 @@ exports.parse = function (source, _, options) {
       while (pos < source.length) {
         switch (source[pos]) {
           case ' ': column++; break;
-          case '\t': column += 4; break;
+          case '\t': column += tabWidth; break;
           case '\r': column = 0; break;
           case '\n': column = 0; line++; break;
           default: break loop;
@@ -243,6 +244,10 @@ exports.stringify = function (data, _, options) {
   var whitespace = typeof options == 'object'
                     ? options.space
                     : options;
+  var tabWidth = (typeof options == 'object' &&
+                    typeof options.tabWidth === 'number')
+                    ? options.tabWidth
+                    : 4;
   switch (typeof whitespace) {
     case 'number':
       var len = whitespace > 10
@@ -262,7 +267,7 @@ exports.stringify = function (data, _, options) {
         var char = whitespace[j];
         switch (char) {
           case ' ': wsColumn++; break;
-          case '\t': wsColumn += 4; break;
+          case '\t': wsColumn += tabWidth; break;
           case '\r': wsColumn = 0; break;
           case '\n': wsColumn = 0; wsLine++; break;
           default: throw new Error('whitespace characters not allowed in JSON');

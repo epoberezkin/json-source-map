@@ -23,7 +23,7 @@ When a domain-specific language that compiles to JavaScript uses JSON as a forma
 
 #### Editing forms/JSON
 
-When a form also allows to edit JSON representation of data on the same screen, this module can be used to sinchronise navigation in JSON and in the form.
+When a form also allows to edit JSON representation of data on the same screen, this module can be used to synchronise navigation in JSON and in the form.
 
 
 ## Usage
@@ -107,11 +107,12 @@ Location object has properties (zero-based numbers):
 
 Options:
 - _bigint_: parse large integers as [BigInt](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt).
+- _tabWidth_: tab width for column calculation
 
 Whitespace:
 - the only character that increases line number in mappings is line feed ('\n'), so if your JSON string has '\r\n' sequence, it will still be counted as one line,
 - both '\r' and '\n' are counted as a character when determining `pos` (it is possible to slice sections of JSON string using `pos` property), but `column` counter is reset when `r` or `n` is encountered,
-- tabs ('\t') are counted as four spaces when determining `column` but as a single character for `pos`.
+- tabs ('\t') are by default counted as four spaces (configurable through the `tabWidth` option) when determining `column` but as a single character for `pos`.
 
 Comparison with the standard `JSON.parse`:
 - when it is not possible to parse JSON, a SyntaxError exception with exactly the same message is thrown,
@@ -132,6 +133,7 @@ Comparison with the standard `JSON.stringify`:
 Options:
 - _space_: same as `space` parameter.
 - _es6_: stringify ES6 Maps, Sets and Typed arrays (as JSON arrays).
+- _tabWidth_: need to be the same as for `parse` to get identical result
 
 
 ## License
