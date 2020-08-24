@@ -13,7 +13,7 @@ var escapedChars = {
 
 var A_CODE = 'a'.charCodeAt();
 
-const leaf_key = '____jsonSourceMapLeafNode';
+var leaf_key = '____jsonSourceMapLeafNode';
 exports.leaf_key = leaf_key;
 
 exports.parse = function (source, _, options) {
