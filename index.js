@@ -13,6 +13,8 @@ var escapedChars = {
 
 var A_CODE = 'a'.charCodeAt();
 
+var leaf_key = '____jsonSourceMapLeafNode';
+exports.leaf_key = leaf_key;
 
 exports.parse = function (source, _, options) {
   var pointers = {};
@@ -21,22 +23,22 @@ exports.parse = function (source, _, options) {
   var pos = 0;
   var bigint = options && options.bigint && typeof BigInt != 'undefined';
   return {
-    data: _parse('', true),
+    data: _parse([], true),
     pointers: pointers
   };
 
-  function _parse(ptr, topLevel) {
+  function _parse(keyList, topLevel) {
     whitespace();
     var data;
-    map(ptr, 'value');
+    map(keyList, 'value');
     var char = getChar();
     switch (char) {
       case 't': read('rue'); data = true; break;
       case 'f': read('alse'); data = false; break;
       case 'n': read('ull'); data = null; break;
       case '"': data = parseString(); break;
-      case '[': data = parseArray(ptr); break;
-      case '{': data = parseObject(ptr); break;
+      case '[': data = parseArray(keyList); break;
+      case '{': data = parseObject(keyList); break;
       default:
         backChar();
         if ('-0123456789'.indexOf(char) >= 0)
@@ -44,7 +46,7 @@ exports.parse = function (source, _, options) {
         else
           unexpectedToken();
     }
-    map(ptr, 'valueEnd');
+    map(keyList, 'valueEnd');
     whitespace();
     if (topLevel && pos < source.length) unexpectedToken();
     return data;
@@ -113,7 +115,7 @@ exports.parse = function (source, _, options) {
             : result;
   }
 
-  function parseArray(ptr) {
+  function parseArray(keyList) {
     whitespace();
     var arr = [];
     var i = 0;
@@ -121,8 +123,8 @@ exports.parse = function (source, _, options) {
     backChar();
 
     while (true) {
-      var itemPtr = ptr + '/' + i;
-      arr.push(_parse(itemPtr));
+      var itemKeyList = keyList.concat([i]);
+      arr.push(_parse(itemKeyList));
       whitespace();
       var char = getChar();
       if (char == ']') break;
@@ -133,7 +135,7 @@ exports.parse = function (source, _, options) {
     return arr;
   }
 
-  function parseObject(ptr) {
+  function parseObject(keyList) {
     whitespace();
     var obj = {};
     if (getChar() == '}') return obj;
@@ -143,13 +145,13 @@ exports.parse = function (source, _, options) {
       var loc = getLoc();
       if (getChar() != '"') wasUnexpectedToken();
       var key = parseString();
-      var propPtr = ptr + '/' + escapeJsonPointer(key);
-      mapLoc(propPtr, 'key', loc);
-      map(propPtr, 'keyEnd');
+      var propKeyList = keyList.concat([key]);
+      mapLoc(propKeyList, 'key', loc);
+      map(propKeyList, 'keyEnd');
       whitespace();
       if (getChar() != ':') wasUnexpectedToken();
       whitespace();
-      obj[key] = _parse(propPtr);
+      obj[key] = _parse(propKeyList);
       whitespace();
       var char = getChar();
       if (char == '}') break;
@@ -203,13 +205,18 @@ exports.parse = function (source, _, options) {
     unexpectedToken();
   }
 
-  function map(ptr, prop) {
-    mapLoc(ptr, prop, getLoc());
+  function map(keyList, prop) {
+    mapLoc(keyList, prop, getLoc());
   }
 
-  function mapLoc(ptr, prop, loc) {
-    pointers[ptr] = pointers[ptr] || {};
-    pointers[ptr][prop] = loc;
+  function mapLoc(keyList, prop, loc) {
+    let item = pointers;
+    for (let k of keyList.concat([leaf_key])) {
+      if (item[k] === undefined)
+        item[k] = {};
+      item = item[k];
+    }
+    item[prop] = loc;
   }
 
   function getLoc() {
@@ -286,8 +293,8 @@ exports.stringify = function (data, _, options) {
     pointers: pointers
   };
 
-  function _stringify(_data, lvl, ptr) {
-    map(ptr, 'value');
+  function _stringify(_data, lvl, keyList) {
+    map(keyList, 'value');
     switch (typeof _data) {
       case 'number':
       case 'bigint':
@@ -315,7 +322,7 @@ exports.stringify = function (data, _, options) {
           stringifyObject();
         }
     }
-    map(ptr, 'valueEnd');
+    map(keyList, 'valueEnd');
 
     function stringifyArray() {
       if (_data.length) {
@@ -325,8 +332,8 @@ exports.stringify = function (data, _, options) {
           if (i) out(',');
           indent(itemLvl);
           var item = validType(_data[i]) ? _data[i] : null;
-          var itemPtr = ptr + '/' + i;
-          _stringify(item, itemLvl, itemPtr);
+          var itemKeyList = keyList.concat([i]);
+          _stringify(item, itemLvl, itemKeyList);
         }
         indent(lvl);
         out(']');
@@ -345,14 +352,14 @@ exports.stringify = function (data, _, options) {
           var value = _data[key];
           if (validType(value)) {
             if (i) out(',');
-            var propPtr = ptr + '/' + escapeJsonPointer(key);
+            var propKeyList = keyList.concat([key]);
             indent(propLvl);
-            map(propPtr, 'key');
+            map(propKeyList, 'key');
             out(quoted(key));
-            map(propPtr, 'keyEnd');
+            map(propKeyList, 'keyEnd');
             out(':');
             if (whitespace) out(' ');
-            _stringify(value, propLvl, propPtr);
+            _stringify(value, propLvl, propKeyList);
           }
         }
         indent(lvl);
@@ -376,14 +383,14 @@ exports.stringify = function (data, _, options) {
           if (validType(value)) {
             if (!first) out(',');
             first = false;
-            var propPtr = ptr + '/' + escapeJsonPointer(key);
+            var propKeyList = keyList.concat([key]);
             indent(propLvl);
-            map(propPtr, 'key');
+            map(propKeyList, 'key');
             out(quoted(key));
-            map(propPtr, 'keyEnd');
+            map(propKeyList, 'keyEnd');
             out(':');
             if (whitespace) out(' ');
-            _stringify(value, propLvl, propPtr);
+            _stringify(value, propLvl, propKeyList);
           }
           entry = entries.next();
         }
@@ -419,9 +426,14 @@ exports.stringify = function (data, _, options) {
     }
   }
 
-  function map(ptr, prop) {
-    pointers[ptr] = pointers[ptr] || {};
-    pointers[ptr][prop] = {
+  function map(keyList, prop) {
+    let item = pointers;
+    for (let k of keyList.concat([leaf_key])) {
+      if (item[k] === undefined)
+        item[k] = {};
+      item = item[k];
+    }
+    item[prop] = {
       line: line,
       column: column,
       pos: pos
@@ -454,12 +466,4 @@ function quoted(str) {
            .replace(ESC_R, '\\r')
            .replace(ESC_T, '\\t');
   return '"' + str + '"';
-}
-
-
-var ESC_0 = /~/g;
-var ESC_1 = /\//g;
-function escapeJsonPointer(str) {
-  return str.replace(ESC_0, '~0')
-            .replace(ESC_1, '~1');
 }
