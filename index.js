@@ -212,9 +212,8 @@ exports.parse = function (source, _, options) {
   function mapLoc(keyList, prop, loc) {
     let item = pointers;
     for (let k of keyList.concat([leaf_key])) {
-      if (item[k] === undefined) {
+      if (item[k] === undefined)
         item[k] = {};
-      }
       item = item[k];
     }
     item[prop] = loc;
@@ -430,9 +429,8 @@ exports.stringify = function (data, _, options) {
   function map(keyList, prop) {
     let item = pointers;
     for (let k of keyList.concat([leaf_key])) {
-      if (item[k] === undefined) {
+      if (item[k] === undefined)
         item[k] = {};
-      }
       item = item[k];
     }
     item[prop] = {
