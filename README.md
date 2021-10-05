@@ -23,7 +23,7 @@ When a domain-specific language that compiles to JavaScript uses JSON as a forma
 
 #### Editing forms/JSON
 
-When a form also allows to edit JSON representation of data on the same screen, this module can be used to sinchronise navigation in JSON and in the form.
+When a form also allows to edit JSON representation of data on the same screen, this module can be used to synchronise navigation in JSON and in the form.
 
 
 ## Usage
