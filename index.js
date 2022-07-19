@@ -221,7 +221,7 @@ exports.parse = function (source, _, options) {
   }
 
   function unexpectedToken() {
-    throw new SyntaxError('Unexpected token ' + source[pos] + ' in JSON at position ' + pos);
+    throw new SyntaxError('Unexpected token ' + source[pos] + ' in JSON at position ' + pos + ' on line ' +line);
   }
 
   function wasUnexpectedToken() {
