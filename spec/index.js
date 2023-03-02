@@ -292,6 +292,28 @@ describe('parse', function() {
     });
   });
 
+  describe("jsonc", () => {
+    const jsonc =
+`{
+  // Hello World
+  "prop1": "test",
+  // Test
+  "prop2": "test2"
+  /* Hello World */,
+  "prop3": [ 123, /* Hello World */ "456", /* Hello World */ 789 ] /* Hello World */,
+  "prop4" /* Hello World*/ : "test3"
+}`;
+
+    const badJsonc = `{ "prop1": "test" / }`;
+
+    it("Should parse jsonc comments as whitespace and execute as normal", () => {
+      assert.deepStrictEqual(jsonMap.parse(jsonc).data, { "prop1": "test", "prop2": "test2", "prop3": [123, "456", 789], "prop4": "test3" });
+    });
+
+    it("Should throw errors on a / not followed by a * or another /", () => {
+      assert.throws(() => jsonMap.parse(badJsonc), "Unexpected token   in JSON at position 18");
+    });
+  });
 
   function testParse(json, expectedData, skipReverseCheck, whitespace) {
     var result = jsonMap.parse(json);

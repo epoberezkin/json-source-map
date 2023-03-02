@@ -58,10 +58,58 @@ exports.parse = function (source, _, options) {
           case '\t': column += 4; break;
           case '\r': column = 0; break;
           case '\n': column = 0; line++; break;
+          case '/': pos++; parseComment(); continue;
           default: break loop;
         }
         pos++;
       }
+  }
+
+  function parseComment() {
+    var commentStr = '/';
+    var nextChar = getChar();
+    commentStr += nextChar;
+
+    if (nextChar === '/') {
+      // read until `\n`
+      singleLineComment: {
+        while (true) {
+          nextChar = getChar();
+
+          if (nextChar === '\n') {
+            line++;
+            break singleLineComment;
+          }
+
+          commentStr += nextChar;
+        }
+      }
+    } else if (nextChar === '*') {
+      // read until `*/`
+      multiLineComment: {
+        while (true) {
+          nextChar = getChar();
+
+          if (nextChar === '\n')
+            line++;
+
+          if (nextChar === '*') {
+            commentStr += nextChar;
+            nextChar = getChar();
+            commentStr += nextChar;
+
+            if (nextChar === '/')
+              break multiLineComment;
+          }
+
+          commentStr += nextChar;
+        }
+      }
+    } else {
+      wasUnexpectedToken();
+    }
+
+    return commentStr;
   }
 
   function parseString() {
