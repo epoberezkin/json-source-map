@@ -73,43 +73,36 @@ exports.parse = function (source, _, options) {
     var nextChar = getChar();
     commentStr += nextChar;
 
-    if (nextChar === '/') {
-      // read until `\n`
-      singleLineComment: {
-        while (true) {
-          nextChar = getChar();
+    var singleLineComment = nextChar === '/';
+    var multiLineComment = nextChar === '*';
 
-          if (nextChar === '\n') {
-            line++;
-            break singleLineComment;
-          }
-
-          commentStr += nextChar;
-        }
-      }
-    } else if (nextChar === '*') {
-      // read until `*/`
-      multiLineComment: {
-        while (true) {
-          nextChar = getChar();
-
-          if (nextChar === '\n')
-            line++;
-
-          if (nextChar === '*') {
-            commentStr += nextChar;
-            nextChar = getChar();
-            commentStr += nextChar;
-
-            if (nextChar === '/')
-              break multiLineComment;
-          }
-
-          commentStr += nextChar;
-        }
-      }
-    } else {
+    if (!singleLineComment && !multiLineComment)
       wasUnexpectedToken();
+
+    if (multiLineComment && source[pos] === '*')
+      getChar();
+
+    readComment: {
+      while (true) {
+        nextChar = getChar();
+
+        if (nextChar === '\n') {
+          line++;
+          if (singleLineComment)
+            break readComment;
+        }
+
+        if (multiLineComment && nextChar === '*') {
+          commentStr += nextChar;
+          nextChar = getChar();
+          commentStr += nextChar;
+
+          if (nextChar === '/')
+            break readComment;
+        }
+
+        commentStr += nextChar;
+      }
     }
 
     return commentStr;

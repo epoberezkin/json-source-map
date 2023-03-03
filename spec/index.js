@@ -306,7 +306,8 @@ describe('parse', function() {
 
     const badJsonc = `{ "prop1": "test" / }`;
 
-    const jsonWithTrailingComma = `{ "prop1": "test1", "prop2": [1, 2, 3,]     , }`;
+    const jsonWithTrailingComma = `{ "prop1": "test1", "prop2": [1, 2, 3,] }`;
+    const jsonObjWithTrailingComma = `{ "prop1": "test1", "prop2": [1, 2, 3]     , }`;
 
     it("Should parse jsonc comments as whitespace and execute as normal if jsonc true", () => {
       assert.deepStrictEqual(jsonMap.parse(jsonc, null, { jsonc: true }).data, { "prop1": "test", "prop2": "test2", "prop3": [123, "456", 789], "prop4": "test3" });
@@ -320,11 +321,12 @@ describe('parse', function() {
       assert.throws(() => jsonMap.parse(badJsonc, null, { jsonc: true }), /Unexpected token[ ]{3}in JSON at position 19/, "Didn't throw error for unterminated multiline string");
     });
 
-    it("Should throw errors for invalid json if jsonc option false or not given and json contains comments", () => {
+    it("Should throw errors for invalid json if jsonc option false or not given and json contains comments or trailing commas", () => {
       assert.throws(() => jsonMap.parse(jsonc, null, { jsonc: false }), /Unexpected token [/] in JSON at position 4/, "Didn't throw error when jsonc option false and comments in json.");
       assert.throws(() => jsonMap.parse(jsonc, null, {}), /Unexpected token [/] in JSON at position 4/, "Didn't throw error when empty options given and comments in json.");
       assert.throws(() => jsonMap.parse(jsonc), /Unexpected token [/] in JSON at position 4/, "Didn't throw error when jsonc not given and comments in json.");
-      assert.throws(() => jsonMap.parse(jsonWithTrailingComma), /Unexpected token ] in JSON at position 38/, "Didn't throw error when jsonc not given and trailing commas in json.");
+      assert.throws(() => jsonMap.parse(jsonWithTrailingComma), /Unexpected token ] in JSON at position 38/, "Didn't throw error when jsonc not given and trailing comma in array.");
+      assert.throws(() => jsonMap.parse(jsonObjWithTrailingComma), /Unexpected token } in JSON at position 45/, "Didn't throw error when jsonc not given and trailing comma in object.");
     });
   });
 
