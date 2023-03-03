@@ -160,15 +160,21 @@ exports.parse = function (source, _, options) {
     if (getChar() == ']') return arr;
     backChar();
 
-    while (true) {
+    readArray: while (true) {
       var itemPtr = ptr + '/' + i;
       arr.push(_parse(itemPtr));
       whitespace();
       var char = getChar();
-      if (char == ']') break;
+      if (char == ']') break readArray;
       if (char != ',') wasUnexpectedToken();
       whitespace();
-      if (jsonc && source[pos] == ']') {getChar(); break;}
+      readTrailingCommas: while (jsonc) {
+        char = getChar();
+        if (char == ']') break readArray;
+        if (char == ',') { whitespace(); continue; }
+        backChar();
+        break readTrailingCommas;
+      }
       i++;
     }
     return arr;
@@ -180,7 +186,7 @@ exports.parse = function (source, _, options) {
     if (getChar() == '}') return obj;
     backChar();
 
-    while (true) {
+    readObject: while (true) {
       var loc = getLoc();
       if (getChar() != '"') wasUnexpectedToken();
       var key = parseString();
@@ -193,10 +199,16 @@ exports.parse = function (source, _, options) {
       obj[key] = _parse(propPtr);
       whitespace();
       var char = getChar();
-      if (char == '}') break;
+      if (char == '}') break readObject;
       if (char != ',') wasUnexpectedToken();
       whitespace();
-      if (jsonc && source[pos] == '}') {getChar(); break;}
+      readTrailingCommas: while (jsonc) {
+        char = getChar();
+        if (char == '}') break readObject;
+        if (char == ',') { whitespace(); continue; }
+        backChar();
+        break readTrailingCommas;
+      }
     }
     return obj;
   }

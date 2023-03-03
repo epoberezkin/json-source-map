@@ -294,22 +294,34 @@ describe('parse', function() {
 
   describe("jsonc", () => {
     const jsonc =
-`{
-  // Hello World
-  "prop1": "test",
-  // Test
-  "prop2": "test2"
-  /* Hello World */,
-  "prop3": [ 123, /* Hello World */ "456", /* Hello World */ 789 ] /* Hello World */,
-  "prop4" /* Hello World*/ : "test3",
-  // /**********
-  /**
-   *
-   * Multi line Big Comment
-   */
-  /// Header
-  /// Subtext
-}`;
+    `{
+      // Hello World
+      "prop1": "test",
+      // Test
+      "prop2": "test2"
+      /* Hello World */,
+      "prop3": [ 123, /* Hello World */ "456",,, /* Hello World */ 789 ] /* Hello World */,
+      "prop4" /* Hello World ,,, * */ : "test3",,,,
+      "prop5": [
+        // Hello World!
+        /// Header
+        // /* */
+        0,
+        1, /* Hello World!
+        ,,,,,,,,,,
+        */
+      2, 3, 4,
+      ],
+      // /**********
+      /**
+       *
+       * Multi line Big Comment
+       */
+      /// Header
+      /// Subtext
+      ,,,,,,,,,,,,,,
+    }`;
+    const expectedJsonc = { prop1: "test", prop2: "test2", prop3: [123, "456", 789], prop4: "test3", prop5: [0, 1, 2, 3, 4] };
 
     const badJsonc = `{ "prop1": "test" / }`;
     const badJsoncArr = `[ "test" / ]`;
@@ -322,11 +334,11 @@ describe('parse', function() {
     const jsonObjWithTrailingComma = `{ "prop1": "test1", "prop2": [1, 2, 3]     , }`;
 
     it("Should parse jsonc comments as whitespace and execute as normal if jsonc true", () => {
-      assert.deepStrictEqual(jsonMap.parse(jsonc, null, { jsonc: true }).data, { "prop1": "test", "prop2": "test2", "prop3": [123, "456", 789], "prop4": "test3" });
+      assert.deepStrictEqual(jsonMap.parse(jsonc, null, { jsonc: true }).data, expectedJsonc);
     });
 
     it("Should parse trailing commas as valid if jsonc true", () => {
-      assert.deepStrictEqual(jsonMap.parse(jsonc, null, { jsonc: true }).data, { "prop1": "test", "prop2": "test2", "prop3": [123, "456", 789], "prop4": "test3" });
+      assert.deepStrictEqual(jsonMap.parse(jsonc, null, { jsonc: true }).data, expectedJsonc);
     });
 
     it("Should throw errors on a / not followed by a * or another /", () => {
@@ -339,9 +351,9 @@ describe('parse', function() {
     });
 
     it("Should throw errors for invalid json if jsonc option false or not given and json contains comments or trailing commas", () => {
-      assert.throws(() => jsonMap.parse(jsonc, null, { jsonc: false }), /Unexpected token \/ in JSON at position 4/);
-      assert.throws(() => jsonMap.parse(jsonc, null, {}), /Unexpected token \/ in JSON at position 4/);
-      assert.throws(() => jsonMap.parse(jsonc), /Unexpected token \/ in JSON at position 4/);
+      assert.throws(() => jsonMap.parse(jsonc, null, { jsonc: false }), /Unexpected token \/ in JSON at position 8/);
+      assert.throws(() => jsonMap.parse(jsonc, null, {}), /Unexpected token \/ in JSON at position 8/);
+      assert.throws(() => jsonMap.parse(jsonc), /Unexpected token \/ in JSON at position 8/);
       assert.throws(() => jsonMap.parse(jsonWithTrailingComma), /Unexpected token ] in JSON at position 38/);
       assert.throws(() => jsonMap.parse(jsonObjWithTrailingComma), /Unexpected token } in JSON at position 45/);
     });
