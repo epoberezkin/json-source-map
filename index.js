@@ -60,8 +60,10 @@ exports.parse = function (source, _, options) {
           case '\r': column = 0; break;
           case '\n': column = 0; line++; break;
           case '/':
-            if (jsonc) { pos++; parseComment(); continue; }
-            break loop;
+            if (!jsonc) break loop;
+            pos++;
+            parseComment();
+            continue loop;
           default: break loop;
         }
         pos++;
@@ -170,11 +172,11 @@ exports.parse = function (source, _, options) {
     whitespace();
 
     readEarlyCommas: while (jsonc) {
-      char = getChar();
-      if (char == ']') return arr;
-      if (char == ',') { whitespace(); continue; }
-      backChar();
-      break readEarlyCommas;
+      switch (getChar()) {
+        case ']': return arr;
+        case ',': whitespace(); continue readEarlyCommas;
+        default: backChar(); break readEarlyCommas;
+      }
     }
 
     readArray: while (true) {
@@ -186,13 +188,12 @@ exports.parse = function (source, _, options) {
       if (char != ',') wasUnexpectedToken();
       whitespace();
       readTrailingCommas: while (jsonc) {
-        char = getChar();
-        if (char == ']') break readArray;
-        if (char == ',') { whitespace(); continue; }
-        backChar();
-        break readTrailingCommas;
+        switch (getChar()) {
+          case ']': break readArray;
+          case ',': whitespace(); continue readTrailingCommas;
+          default: backChar(); break readTrailingCommas;
+        }
       }
-      whitespace();
       i++;
     }
     return arr;
@@ -207,11 +208,11 @@ exports.parse = function (source, _, options) {
     whitespace();
 
     readEarlyCommas: while (jsonc) {
-      char = getChar();
-      if (char == '}') return obj;
-      if (char == ',') { whitespace(); continue; }
-      backChar();
-      break readEarlyCommas;
+      switch (getChar()) {
+        case '}': return obj;
+        case ',': whitespace(); continue readEarlyCommas;
+        default: backChar(); break readEarlyCommas;
+      }
     }
 
     readObject: while (true) {
@@ -231,11 +232,11 @@ exports.parse = function (source, _, options) {
       if (char != ',') wasUnexpectedToken();
       whitespace();
       readTrailingCommas: while (jsonc) {
-        char = getChar();
-        if (char == '}') break readObject;
-        if (char == ',') { whitespace(); continue; }
-        backChar();
-        break readTrailingCommas;
+        switch (getChar()) {
+          case '}': break readObject;
+          case ',': whitespace(); continue readTrailingCommas;
+          default: backChar(); break readTrailingCommas;
+        }
       }
     }
     return obj;
