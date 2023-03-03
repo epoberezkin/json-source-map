@@ -19,7 +19,7 @@ exports.parse = function (source, _, options) {
   var line = 0;
   var column = 0;
   var pos = 0;
-  var jsonc = !!(options && options.jsonc && typeof options.jsonc != 'undefined');
+  var jsonc = !!(options && options.jsonc);
   var bigint = options && options.bigint && typeof BigInt != 'undefined';
   return {
     data: _parse('', true),
@@ -82,19 +82,26 @@ exports.parse = function (source, _, options) {
       while (true) {
         nextChar = getChar();
 
-        if (nextChar === '\n') {
-          line++;
-          if (singleLineComment)
-            break readComment;
-        }
+        switch (nextChar) {
+          case '\t': column += 3; break;
+          case '\r': column = 0; break;
+          case '\n':
+            column = 0;
+            line++;
 
-        if (multiLineComment && nextChar === '*') {
-          commentStr += nextChar;
-          nextChar = getChar();
-          commentStr += nextChar;
+            if (singleLineComment) break readComment;
+            break;
+          case '*':
+            if (multiLineComment) {
+              commentStr += nextChar;
+              nextChar = getChar();
+              commentStr += nextChar;
 
-          if (nextChar === '/')
-            break readComment;
+              if (nextChar === '/')
+                break readComment;
+            }
+            break;
+          default: break;
         }
 
         commentStr += nextChar;
@@ -157,14 +164,23 @@ exports.parse = function (source, _, options) {
     whitespace();
     var arr = [];
     var i = 0;
-    if (getChar() == ']') return arr;
+    var char = getChar();
+    if (char == ']') return arr;
     backChar();
+    whitespace();
 
     readArray: while (true) {
+      readEarlyCommas: while (jsonc) {
+        char = getChar();
+        if (char == ']') break readArray;
+        if (char == ',') { whitespace(); continue; }
+        backChar();
+        break readEarlyCommas;
+      }
       var itemPtr = ptr + '/' + i;
       arr.push(_parse(itemPtr));
       whitespace();
-      var char = getChar();
+      char = getChar();
       if (char == ']') break readArray;
       if (char != ',') wasUnexpectedToken();
       whitespace();
@@ -175,6 +191,7 @@ exports.parse = function (source, _, options) {
         backChar();
         break readTrailingCommas;
       }
+      whitespace();
       i++;
     }
     return arr;
@@ -183,10 +200,19 @@ exports.parse = function (source, _, options) {
   function parseObject(ptr) {
     whitespace();
     var obj = {};
-    if (getChar() == '}') return obj;
+    var char = getChar();
+    if (char == '}') return obj;
     backChar();
+    whitespace();
 
     readObject: while (true) {
+      readEarlyCommas: while (jsonc) {
+        char = getChar();
+        if (char == '}') break readObject;
+        if (char == ',') { whitespace(); continue; }
+        backChar();
+        break readEarlyCommas;
+      }
       var loc = getLoc();
       if (getChar() != '"') wasUnexpectedToken();
       var key = parseString();
@@ -198,7 +224,7 @@ exports.parse = function (source, _, options) {
       whitespace();
       obj[key] = _parse(propPtr);
       whitespace();
-      var char = getChar();
+      char = getChar();
       if (char == '}') break readObject;
       if (char != ',') wasUnexpectedToken();
       whitespace();

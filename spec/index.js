@@ -294,34 +294,50 @@ describe('parse', function() {
 
   describe("jsonc", () => {
     const jsonc =
-    `{
-      // Hello World
-      "prop1": "test",
-      // Test
-      "prop2": "test2"
-      /* Hello World */,
-      "prop3": [ 123, /* Hello World */ "456",,, /* Hello World */ 789 ] /* Hello World */,
-      "prop4" /* Hello World ,,, * */ : "test3",,,,
-      "prop5": [
-        // Hello World!
-        /// Header
-        // /* */
-        0,
-        1, /* Hello World!
-        ,,,,,,,,,,
-        */
-      2, 3, 4,
-      ],
-      // /**********
-      /**
-       *
-       * Multi line Big Comment
-       */
-      /// Header
-      /// Subtext
-      ,,,,,,,,,,,,,,
-    }`;
+`{
+  // Hello World
+  "prop1": "test",
+  // Test
+  "prop2": "test2"
+  /* Hello World */,
+  "prop3": [ 123, /* Hello World */ "456",,, /* Hello World */ 789 ] /* Hello World */,
+  "prop4" /* Hello World ,,, * */ : "test3",,,,
+  "prop5": [          ,   ,  ,      , \r \r \r
+    // Hello World!
+    /// Header \r \r \n \n \r \n
+    // /* */
+    0,
+    1, /* Hello World!
+    ,,,,,,,,,,
+    */
+  2, 3, 4,
+  ],
+  // /**********
+  /**
+   *
+   * Multi line Big Comment
+   */
+  /// Header
+  /// Subtext
+  ,,,,,,,,,,,,,,
+}`;
     const expectedJsonc = { prop1: "test", prop2: "test2", prop3: [123, "456", 789], prop4: "test3", prop5: [0, 1, 2, 3, 4] };
+    const expectedPointers = {
+      "":{"value":{"line":0,"column":0,"pos":0},"valueEnd":{"line":27,"column":1,"pos":503}},
+      "/prop1":{"key":{"line":2,"column":2,"pos":21},"keyEnd":{"line":2,"column":9,"pos":28},"value":{"line":2,"column":11,"pos":30},"valueEnd":{"line":2,"column":17,"pos":36}},
+      "/prop2":{"key":{"line":4,"column":2,"pos":50},"keyEnd":{"line":4,"column":9,"pos":57},"value":{"line":4,"column":11,"pos":59},"valueEnd":{"line":4,"column":18,"pos":66}},
+      "/prop3":{"key":{"line":6,"column":2,"pos":90},"keyEnd":{"line":6,"column":9,"pos":97},"value":{"line":6,"column":11,"pos":99},"valueEnd":{"line":6,"column":66,"pos":156}},
+      "/prop3/0":{"value":{"line":6,"column":13,"pos":101},"valueEnd":{"line":6,"column":16,"pos":104}},
+      "/prop3/1":{"value":{"line":6,"column":35,"pos":124},"valueEnd":{"line":6,"column":40,"pos":129}},
+      "/prop3/2":{"value":{"line":6,"column":61,"pos":151},"valueEnd":{"line":6,"column":64,"pos":154}},
+      "/prop4":{"key":{"line":7,"column":2,"pos":178},"keyEnd":{"line":7,"column":9,"pos":185},"value":{"line":7,"column":35,"pos":212},"valueEnd":{"line":7,"column":42,"pos":219}},
+      "/prop5":{"key":{"line":8,"column":2,"pos":226},"keyEnd":{"line":8,"column":9,"pos":233},"value":{"line":8,"column":11,"pos":235},"valueEnd":{"line":20,"column":3,"pos":394}},
+      "/prop5/0":{"value":{"line":15,"column":4,"pos":332},"valueEnd":{"line":15,"column":5,"pos":333}},
+      "/prop5/1":{"value":{"line":16,"column":4,"pos":339},"valueEnd":{"line":16,"column":5,"pos":340}},
+      "/prop5/2":{"value":{"line":19,"column":2,"pos":382},"valueEnd":{"line":19,"column":3,"pos":383}},
+      "/prop5/3":{"value":{"line":19,"column":5,"pos":385},"valueEnd":{"line":19,"column":6,"pos":386}},
+      "/prop5/4":{"value":{"line":19,"column":8,"pos":388},"valueEnd":{"line":19,"column":9,"pos":389}}
+    };
 
     const badJsonc = `{ "prop1": "test" / }`;
     const badJsoncArr = `[ "test" / ]`;
@@ -333,12 +349,9 @@ describe('parse', function() {
     const jsonWithTrailingComma = `{ "prop1": "test1", "prop2": [1, 2, 3,] }`;
     const jsonObjWithTrailingComma = `{ "prop1": "test1", "prop2": [1, 2, 3]     , }`;
 
-    it("Should parse jsonc comments as whitespace and execute as normal if jsonc true", () => {
+    it("Should parse json with comments and trailing commas as whitespace and execute as normal if jsonc true", () => {
       assert.deepStrictEqual(jsonMap.parse(jsonc, null, { jsonc: true }).data, expectedJsonc);
-    });
-
-    it("Should parse trailing commas as valid if jsonc true", () => {
-      assert.deepStrictEqual(jsonMap.parse(jsonc, null, { jsonc: true }).data, expectedJsonc);
+      assert.deepStrictEqual(jsonMap.parse(jsonc, null, { jsonc: true }).pointers, expectedPointers);
     });
 
     it("Should throw errors on a / not followed by a * or another /", () => {
@@ -351,9 +364,9 @@ describe('parse', function() {
     });
 
     it("Should throw errors for invalid json if jsonc option false or not given and json contains comments or trailing commas", () => {
-      assert.throws(() => jsonMap.parse(jsonc, null, { jsonc: false }), /Unexpected token \/ in JSON at position 8/);
-      assert.throws(() => jsonMap.parse(jsonc, null, {}), /Unexpected token \/ in JSON at position 8/);
-      assert.throws(() => jsonMap.parse(jsonc), /Unexpected token \/ in JSON at position 8/);
+      assert.throws(() => jsonMap.parse(jsonc, null, { jsonc: false }), /Unexpected token \/ in JSON at position 4/);
+      assert.throws(() => jsonMap.parse(jsonc, null, {}), /Unexpected token \/ in JSON at position 4/);
+      assert.throws(() => jsonMap.parse(jsonc), /Unexpected token \/ in JSON at position 4/);
       assert.throws(() => jsonMap.parse(jsonWithTrailingComma), /Unexpected token ] in JSON at position 38/);
       assert.throws(() => jsonMap.parse(jsonObjWithTrailingComma), /Unexpected token } in JSON at position 45/);
     });
