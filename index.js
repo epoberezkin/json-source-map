@@ -19,6 +19,7 @@ exports.parse = function (source, _, options) {
   var line = 0;
   var column = 0;
   var pos = 0;
+  var jsonc = !!(options && options.jsonc && typeof options.jsonc != 'undefined');
   var bigint = options && options.bigint && typeof BigInt != 'undefined';
   return {
     data: _parse('', true),
@@ -58,7 +59,9 @@ exports.parse = function (source, _, options) {
           case '\t': column += 4; break;
           case '\r': column = 0; break;
           case '\n': column = 0; line++; break;
-          case '/': pos++; parseComment(); continue;
+          case '/':
+            if (jsonc) { pos++; parseComment(); continue; }
+            break loop;
           default: break loop;
         }
         pos++;

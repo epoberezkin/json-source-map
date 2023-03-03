@@ -307,11 +307,18 @@ describe('parse', function() {
     const badJsonc = `{ "prop1": "test" / }`;
 
     it("Should parse jsonc comments as whitespace and execute as normal", () => {
-      assert.deepStrictEqual(jsonMap.parse(jsonc).data, { "prop1": "test", "prop2": "test2", "prop3": [123, "456", 789], "prop4": "test3" });
+      assert.deepStrictEqual(jsonMap.parse(jsonc, null, { jsonc: true }).data, { "prop1": "test", "prop2": "test2", "prop3": [123, "456", 789], "prop4": "test3" });
     });
 
     it("Should throw errors on a / not followed by a * or another /", () => {
-      assert.throws(() => jsonMap.parse(badJsonc), "Unexpected token   in JSON at position 18");
+      assert.throws(() => jsonMap.parse(badJsonc, null, { jsonc: true }), /Unexpected token[ ]{3}in JSON at position 19/, "Didn't throw error for unterminated multiline string");
+    });
+
+    it("Should throw errors for invalid json if jsonc option false or not given and json contains comments", () => {
+      assert.throws(() => jsonMap.parse(jsonc, null, { jsonc: false }), /Unexpected token [/] in JSON at position 4/, "Didn't throw error when jsonc option false and comments in json.");
+      assert.throws(() => jsonMap.parse(jsonc, null, {}), /Unexpected token [/] in JSON at position 4/, "Didn't throw error when empty options given and comments in json.");
+      assert.throws(() => jsonMap.parse(jsonc), /Unexpected token [/] in JSON at position 4/, "Didn't throw error when jsonc not given and comments in json.");
+
     });
   });
 
