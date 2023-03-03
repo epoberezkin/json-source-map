@@ -179,6 +179,7 @@ exports.parse = function (source, _, options) {
       if (char == ']') break;
       if (char != ',') wasUnexpectedToken();
       whitespace();
+      if (jsonc && source[pos] == ']') {getChar(); break;}
       i++;
     }
     return arr;
@@ -206,6 +207,7 @@ exports.parse = function (source, _, options) {
       if (char == '}') break;
       if (char != ',') wasUnexpectedToken();
       whitespace();
+      if (jsonc && source[pos] == '}') {getChar(); break;}
     }
     return obj;
   }

@@ -301,12 +301,18 @@ describe('parse', function() {
   "prop2": "test2"
   /* Hello World */,
   "prop3": [ 123, /* Hello World */ "456", /* Hello World */ 789 ] /* Hello World */,
-  "prop4" /* Hello World*/ : "test3"
+  "prop4" /* Hello World*/ : "test3",
 }`;
 
     const badJsonc = `{ "prop1": "test" / }`;
 
-    it("Should parse jsonc comments as whitespace and execute as normal", () => {
+    const jsonWithTrailingComma = `{ "prop1": "test1", "prop2": [1, 2, 3,]     , }`;
+
+    it("Should parse jsonc comments as whitespace and execute as normal if jsonc true", () => {
+      assert.deepStrictEqual(jsonMap.parse(jsonc, null, { jsonc: true }).data, { "prop1": "test", "prop2": "test2", "prop3": [123, "456", 789], "prop4": "test3" });
+    });
+
+    it("Should parse trailing commas as valid if jsonc true", () => {
       assert.deepStrictEqual(jsonMap.parse(jsonc, null, { jsonc: true }).data, { "prop1": "test", "prop2": "test2", "prop3": [123, "456", 789], "prop4": "test3" });
     });
 
@@ -318,7 +324,7 @@ describe('parse', function() {
       assert.throws(() => jsonMap.parse(jsonc, null, { jsonc: false }), /Unexpected token [/] in JSON at position 4/, "Didn't throw error when jsonc option false and comments in json.");
       assert.throws(() => jsonMap.parse(jsonc, null, {}), /Unexpected token [/] in JSON at position 4/, "Didn't throw error when empty options given and comments in json.");
       assert.throws(() => jsonMap.parse(jsonc), /Unexpected token [/] in JSON at position 4/, "Didn't throw error when jsonc not given and comments in json.");
-
+      assert.throws(() => jsonMap.parse(jsonWithTrailingComma), /Unexpected token ] in JSON at position 38/, "Didn't throw error when jsonc not given and comments in json.");
     });
   });
 
