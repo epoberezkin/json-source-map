@@ -324,7 +324,7 @@ describe('parse', function() {
       assert.throws(() => jsonMap.parse(jsonc, null, { jsonc: false }), /Unexpected token [/] in JSON at position 4/, "Didn't throw error when jsonc option false and comments in json.");
       assert.throws(() => jsonMap.parse(jsonc, null, {}), /Unexpected token [/] in JSON at position 4/, "Didn't throw error when empty options given and comments in json.");
       assert.throws(() => jsonMap.parse(jsonc), /Unexpected token [/] in JSON at position 4/, "Didn't throw error when jsonc not given and comments in json.");
-      assert.throws(() => jsonMap.parse(jsonWithTrailingComma), /Unexpected token ] in JSON at position 38/, "Didn't throw error when jsonc not given and comments in json.");
+      assert.throws(() => jsonMap.parse(jsonWithTrailingComma), /Unexpected token ] in JSON at position 38/, "Didn't throw error when jsonc not given and trailing commas in json.");
     });
   });
 
