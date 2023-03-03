@@ -302,9 +302,21 @@ describe('parse', function() {
   /* Hello World */,
   "prop3": [ 123, /* Hello World */ "456", /* Hello World */ 789 ] /* Hello World */,
   "prop4" /* Hello World*/ : "test3",
+  // /**********
+  /**
+   *
+   * Multi line Big Comment
+   */
+  /// Header
+  /// Subtext
 }`;
 
     const badJsonc = `{ "prop1": "test" / }`;
+    const badJsoncArr = `[ "test" / ]`;
+    const tooManyExits = `{ "prop1": "test" /* */ */ }`;
+    const tooManyExitsArr = `{ "test" /* */ */ }`;
+    const unopenedComment = `{ Hello World! }`;
+    const unopenedCommentArr = `[ Hello World! ]`;
 
     const jsonWithTrailingComma = `{ "prop1": "test1", "prop2": [1, 2, 3,] }`;
     const jsonObjWithTrailingComma = `{ "prop1": "test1", "prop2": [1, 2, 3]     , }`;
@@ -318,15 +330,20 @@ describe('parse', function() {
     });
 
     it("Should throw errors on a / not followed by a * or another /", () => {
-      assert.throws(() => jsonMap.parse(badJsonc, null, { jsonc: true }), /Unexpected token[ ]{3}in JSON at position 19/, "Didn't throw error for unterminated multiline string");
+      assert.throws(() => jsonMap.parse(badJsonc, null, { jsonc: true }), /Unexpected token[ ]{3}in JSON at position 19/);
+      assert.throws(() => jsonMap.parse(badJsoncArr, null, { jsonc: true }), /Unexpected token[ ]{3}in JSON at position 10/);
+      assert.throws(() => jsonMap.parse(tooManyExits, null, { jsonc: true }), /Unexpected token \* in JSON at position 24/);
+      assert.throws(() => jsonMap.parse(tooManyExitsArr, null, { jsonc: true }), /Unexpected token \* in JSON at position 15/);
+      assert.throws(() => jsonMap.parse(unopenedComment, null, { jsonc: true }), /Unexpected token H in JSON at position 2/);
+      assert.throws(() => jsonMap.parse(unopenedCommentArr, null, { jsonc: true }), /Unexpected token H in JSON at position 2/);
     });
 
     it("Should throw errors for invalid json if jsonc option false or not given and json contains comments or trailing commas", () => {
-      assert.throws(() => jsonMap.parse(jsonc, null, { jsonc: false }), /Unexpected token [/] in JSON at position 4/, "Didn't throw error when jsonc option false and comments in json.");
-      assert.throws(() => jsonMap.parse(jsonc, null, {}), /Unexpected token [/] in JSON at position 4/, "Didn't throw error when empty options given and comments in json.");
-      assert.throws(() => jsonMap.parse(jsonc), /Unexpected token [/] in JSON at position 4/, "Didn't throw error when jsonc not given and comments in json.");
-      assert.throws(() => jsonMap.parse(jsonWithTrailingComma), /Unexpected token ] in JSON at position 38/, "Didn't throw error when jsonc not given and trailing comma in array.");
-      assert.throws(() => jsonMap.parse(jsonObjWithTrailingComma), /Unexpected token } in JSON at position 45/, "Didn't throw error when jsonc not given and trailing comma in object.");
+      assert.throws(() => jsonMap.parse(jsonc, null, { jsonc: false }), /Unexpected token \/ in JSON at position 4/);
+      assert.throws(() => jsonMap.parse(jsonc, null, {}), /Unexpected token \/ in JSON at position 4/);
+      assert.throws(() => jsonMap.parse(jsonc), /Unexpected token \/ in JSON at position 4/);
+      assert.throws(() => jsonMap.parse(jsonWithTrailingComma), /Unexpected token ] in JSON at position 38/);
+      assert.throws(() => jsonMap.parse(jsonObjWithTrailingComma), /Unexpected token } in JSON at position 45/);
     });
   });
 

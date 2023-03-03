@@ -69,18 +69,14 @@ exports.parse = function (source, _, options) {
   }
 
   function parseComment() {
-    var commentStr = '/';
     var nextChar = getChar();
-    commentStr += nextChar;
-
     var singleLineComment = nextChar === '/';
     var multiLineComment = nextChar === '*';
 
     if (!singleLineComment && !multiLineComment)
       wasUnexpectedToken();
 
-    if (multiLineComment && source[pos] === '*')
-      getChar();
+    var commentStr = '/' + nextChar;
 
     readComment: {
       while (true) {
