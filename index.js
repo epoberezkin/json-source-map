@@ -169,14 +169,15 @@ exports.parse = function (source, _, options) {
     backChar();
     whitespace();
 
+    readEarlyCommas: while (jsonc) {
+      char = getChar();
+      if (char == ']') return arr;
+      if (char == ',') { whitespace(); continue; }
+      backChar();
+      break readEarlyCommas;
+    }
+
     readArray: while (true) {
-      readEarlyCommas: while (jsonc) {
-        char = getChar();
-        if (char == ']') break readArray;
-        if (char == ',') { whitespace(); continue; }
-        backChar();
-        break readEarlyCommas;
-      }
       var itemPtr = ptr + '/' + i;
       arr.push(_parse(itemPtr));
       whitespace();
@@ -205,14 +206,15 @@ exports.parse = function (source, _, options) {
     backChar();
     whitespace();
 
+    readEarlyCommas: while (jsonc) {
+      char = getChar();
+      if (char == '}') return obj;
+      if (char == ',') { whitespace(); continue; }
+      backChar();
+      break readEarlyCommas;
+    }
+
     readObject: while (true) {
-      readEarlyCommas: while (jsonc) {
-        char = getChar();
-        if (char == '}') break readObject;
-        if (char == ',') { whitespace(); continue; }
-        backChar();
-        break readEarlyCommas;
-      }
       var loc = getLoc();
       if (getChar() != '"') wasUnexpectedToken();
       var key = parseString();

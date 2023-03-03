@@ -339,6 +339,46 @@ describe('parse', function() {
       "/prop5/4":{"value":{"line":19,"column":8,"pos":388},"valueEnd":{"line":19,"column":9,"pos":389}}
     };
 
+    const simpleJsonc =
+    `/* Simple jsonc*/{ "prop1": "test1" }`;
+    const expectedSimpleJsonc = { prop1: "test1" };
+    const pointersSimpleJsonc = {
+      "": {
+        "value": {
+          "column": 16,
+          "line": 0,
+          "pos": 17,
+        },
+        "valueEnd": {
+          "column": 36,
+          "line": 0,
+          "pos": 37,
+        },
+      },
+      "/prop1": {
+        "key": {
+          "column": 18,
+          "line": 0,
+          "pos": 19
+        },
+        "keyEnd": {
+          "column": 25,
+          "line": 0,
+          "pos": 26
+        },
+        "value": {
+          "column": 27,
+          "line": 0,
+          "pos": 28
+        },
+        "valueEnd": {
+          "column": 34,
+          "line": 0,
+          "pos": 35
+        }
+      }
+    };
+
     const badJsonc = `{ "prop1": "test" / }`;
     const badJsoncArr = `[ "test" / ]`;
     const tooManyExits = `{ "prop1": "test" /* */ */ }`;
@@ -352,6 +392,8 @@ describe('parse', function() {
     it("Should parse json with comments and trailing commas as whitespace and execute as normal if jsonc true", () => {
       assert.deepStrictEqual(jsonMap.parse(jsonc, null, { jsonc: true }).data, expectedJsonc);
       assert.deepStrictEqual(jsonMap.parse(jsonc, null, { jsonc: true }).pointers, expectedPointers);
+      assert.deepStrictEqual(jsonMap.parse(simpleJsonc, null, { jsonc: true }).data, expectedSimpleJsonc);
+      assert.deepStrictEqual(jsonMap.parse(simpleJsonc, null, { jsonc: true }).pointers, pointersSimpleJsonc);
     });
 
     it("Should throw errors on a / not followed by a * or another /", () => {
