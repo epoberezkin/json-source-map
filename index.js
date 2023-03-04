@@ -19,6 +19,7 @@ exports.parse = function (source, _, options) {
   var line = 0;
   var column = 0;
   var pos = 0;
+  var jsonc = !!(options && options.jsonc);
   var bigint = options && options.bigint && typeof BigInt != 'undefined';
   return {
     data: _parse('', true),
@@ -58,10 +59,58 @@ exports.parse = function (source, _, options) {
           case '\t': column += 4; break;
           case '\r': column = 0; break;
           case '\n': column = 0; line++; break;
+          case '/':
+            if (!jsonc) break loop;
+            column++; pos++;
+            parseComment();
+            continue loop;
           default: break loop;
         }
         pos++;
       }
+  }
+
+  function parseComment() {
+    var nextChar = getChar();
+    var singleLineComment = nextChar === '/';
+    var multiLineComment = nextChar === '*';
+
+    if (!singleLineComment && !multiLineComment)
+      wasUnexpectedToken();
+
+    var commentStr = '/' + nextChar;
+
+    readComment: {
+      while (true) {
+        nextChar = getChar();
+
+        switch (nextChar) {
+          case '\t': column += 3; break;
+          case '\r': column = 0; break;
+          case '\n':
+            column = 0;
+            line++;
+
+            if (singleLineComment) break readComment;
+            break;
+          case '*':
+            if (multiLineComment) {
+              commentStr += nextChar;
+              nextChar = getChar();
+              commentStr += nextChar;
+
+              if (nextChar === '/')
+                break readComment;
+            }
+            break;
+          default: break;
+        }
+
+        commentStr += nextChar;
+      }
+    }
+
+    return commentStr;
   }
 
   function parseString() {
@@ -117,17 +166,34 @@ exports.parse = function (source, _, options) {
     whitespace();
     var arr = [];
     var i = 0;
-    if (getChar() == ']') return arr;
+    var char = getChar();
+    if (char == ']') return arr;
     backChar();
+    whitespace();
 
-    while (true) {
+    readEarlyCommas: while (jsonc) {
+      switch (getChar()) {
+        case ']': return arr;
+        case ',': whitespace(); continue readEarlyCommas;
+        default: backChar(); break readEarlyCommas;
+      }
+    }
+
+    readArray: while (true) {
       var itemPtr = ptr + '/' + i;
       arr.push(_parse(itemPtr));
       whitespace();
-      var char = getChar();
-      if (char == ']') break;
+      char = getChar();
+      if (char == ']') break readArray;
       if (char != ',') wasUnexpectedToken();
       whitespace();
+      readTrailingCommas: while (jsonc) {
+        switch (getChar()) {
+          case ']': break readArray;
+          case ',': whitespace(); continue readTrailingCommas;
+          default: backChar(); break readTrailingCommas;
+        }
+      }
       i++;
     }
     return arr;
@@ -136,10 +202,20 @@ exports.parse = function (source, _, options) {
   function parseObject(ptr) {
     whitespace();
     var obj = {};
-    if (getChar() == '}') return obj;
+    var char = getChar();
+    if (char == '}') return obj;
     backChar();
+    whitespace();
 
-    while (true) {
+    readEarlyCommas: while (jsonc) {
+      switch (getChar()) {
+        case '}': return obj;
+        case ',': whitespace(); continue readEarlyCommas;
+        default: backChar(); break readEarlyCommas;
+      }
+    }
+
+    readObject: while (true) {
       var loc = getLoc();
       if (getChar() != '"') wasUnexpectedToken();
       var key = parseString();
@@ -151,10 +227,17 @@ exports.parse = function (source, _, options) {
       whitespace();
       obj[key] = _parse(propPtr);
       whitespace();
-      var char = getChar();
-      if (char == '}') break;
+      char = getChar();
+      if (char == '}') break readObject;
       if (char != ',') wasUnexpectedToken();
       whitespace();
+      readTrailingCommas: while (jsonc) {
+        switch (getChar()) {
+          case '}': break readObject;
+          case ',': whitespace(); continue readTrailingCommas;
+          default: backChar(); break readTrailingCommas;
+        }
+      }
     }
     return obj;
   }

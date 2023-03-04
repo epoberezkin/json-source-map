@@ -107,6 +107,7 @@ Location object has properties (zero-based numbers):
 
 Options:
 - _bigint_: parse large integers as [BigInt](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt).
+- _jsonc_: parse as [jsonc](https://code.visualstudio.com/docs/languages/json#_json-with-comments).
 
 Whitespace:
 - the only character that increases line number in mappings is line feed ('\n'), so if your JSON string has '\r\n' sequence, it will still be counted as one line,

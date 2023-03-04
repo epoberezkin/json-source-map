@@ -292,6 +292,179 @@ describe('parse', function() {
     });
   });
 
+  describe("jsonc", () => {
+    const jsonc =
+`{
+  // Hello World
+  "prop1": "test",
+  // Test
+  "prop2": "test2"
+  /* Hello World */,
+  "prop3": [ 123, /* Hello World */ "456",,, /* Hello World */ 789 ] /* Hello World */,
+  "prop4" /* Hello World ,,, * */ : "test3",,,,
+  "prop5": [          ,   ,  ,      , \r \r \r
+    // Hello World!
+    /// Header \r \r \n \n \r \n
+    // /* */
+    0,
+    1, /* Hello World!
+    ,,,,,,,,,,
+    */
+  2, 3, 4,
+  ],
+  // /**********
+  /**
+   *
+   * Multi line Big Comment
+   */
+  /// Header
+  /// Subtext
+  ,,,,,,,,,,,,,,
+}`;
+    const expectedJsonc = { prop1: "test", prop2: "test2", prop3: [123, "456", 789], prop4: "test3", prop5: [0, 1, 2, 3, 4] };
+    const expectedPointers = {
+      '': {
+        value: { line: 0, column: 0, pos: 0 },
+        valueEnd: { line: 27, column: 1, pos: 503 }
+      },
+      '/prop1': {
+        key: { line: 2, column: 2, pos: 21 },
+        keyEnd: { line: 2, column: 9, pos: 28 },
+        value: { line: 2, column: 11, pos: 30 },
+        valueEnd: { line: 2, column: 17, pos: 36 }
+      },
+      '/prop2': {
+        key: { line: 4, column: 2, pos: 50 },
+        keyEnd: { line: 4, column: 9, pos: 57 },
+        value: { line: 4, column: 11, pos: 59 },
+        valueEnd: { line: 4, column: 18, pos: 66 }
+      },
+      '/prop3': {
+        key: { line: 6, column: 2, pos: 90 },
+        keyEnd: { line: 6, column: 9, pos: 97 },
+        value: { line: 6, column: 11, pos: 99 },
+        valueEnd: { line: 6, column: 68, pos: 156 }
+      },
+      '/prop3/0': {
+        value: { line: 6, column: 13, pos: 101 },
+        valueEnd: { line: 6, column: 16, pos: 104 }
+      },
+      '/prop3/1': {
+        value: { line: 6, column: 36, pos: 124 },
+        valueEnd: { line: 6, column: 41, pos: 129 }
+      },
+      '/prop3/2': {
+        value: { line: 6, column: 63, pos: 151 },
+        valueEnd: { line: 6, column: 66, pos: 154 }
+      },
+      '/prop4': {
+        key: { line: 7, column: 2, pos: 178 },
+        keyEnd: { line: 7, column: 9, pos: 185 },
+        value: { line: 7, column: 36, pos: 212 },
+        valueEnd: { line: 7, column: 43, pos: 219 }
+      },
+      '/prop5': {
+        key: { line: 8, column: 2, pos: 226 },
+        keyEnd: { line: 8, column: 9, pos: 233 },
+        value: { line: 8, column: 11, pos: 235 },
+        valueEnd: { line: 20, column: 3, pos: 394 }
+      },
+      '/prop5/0': {
+        value: { line: 15, column: 4, pos: 332 },
+        valueEnd: { line: 15, column: 5, pos: 333 }
+      },
+      '/prop5/1': {
+        value: { line: 16, column: 4, pos: 339 },
+        valueEnd: { line: 16, column: 5, pos: 340 }
+      },
+      '/prop5/2': {
+        value: { line: 19, column: 2, pos: 382 },
+        valueEnd: { line: 19, column: 3, pos: 383 }
+      },
+      '/prop5/3': {
+        value: { line: 19, column: 5, pos: 385 },
+        valueEnd: { line: 19, column: 6, pos: 386 }
+      },
+      '/prop5/4': {
+        value: { line: 19, column: 8, pos: 388 },
+        valueEnd: { line: 19, column: 9, pos: 389 }
+      }
+    };
+
+    const simpleJsonc =
+    `/* Simple jsonc*/{ "prop1": "test1" }`;
+    const expectedSimpleJsonc = { prop1: "test1" };
+    const pointersSimpleJsonc = {
+      "": {
+        "value": {
+          "column": 17,
+          "line": 0,
+          "pos": 17,
+        },
+        "valueEnd": {
+          "column": 37,
+          "line": 0,
+          "pos": 37,
+        },
+      },
+      "/prop1": {
+        "key": {
+          "column": 19,
+          "line": 0,
+          "pos": 19
+        },
+        "keyEnd": {
+          "column": 26,
+          "line": 0,
+          "pos": 26
+        },
+        "value": {
+          "column": 28,
+          "line": 0,
+          "pos": 28
+        },
+        "valueEnd": {
+          "column": 35,
+          "line": 0,
+          "pos": 35
+        }
+      }
+    };
+
+    const badJsonc = `{ "prop1": "test" / }`;
+    const badJsoncArr = `[ "test" / ]`;
+    const tooManyExits = `{ "prop1": "test" /* */ */ }`;
+    const tooManyExitsArr = `{ "test" /* */ */ }`;
+    const unopenedComment = `{ Hello World! }`;
+    const unopenedCommentArr = `[ Hello World! ]`;
+
+    const jsonWithTrailingComma = `{ "prop1": "test1", "prop2": [1, 2, 3,] }`;
+    const jsonObjWithTrailingComma = `{ "prop1": "test1", "prop2": [1, 2, 3]     , }`;
+
+    it("Should parse json with comments and trailing commas as whitespace and execute as normal if jsonc true", () => {
+      assert.deepStrictEqual(jsonMap.parse(jsonc, null, { jsonc: true }).data, expectedJsonc);
+      assert.deepStrictEqual(jsonMap.parse(jsonc, null, { jsonc: true }).pointers, expectedPointers);
+      assert.deepStrictEqual(jsonMap.parse(simpleJsonc, null, { jsonc: true }).data, expectedSimpleJsonc);
+      assert.deepStrictEqual(jsonMap.parse(simpleJsonc, null, { jsonc: true }).pointers, pointersSimpleJsonc);
+    });
+
+    it("Should throw errors on a / not followed by a * or another /", () => {
+      assert.throws(() => jsonMap.parse(badJsonc, null, { jsonc: true }), /Unexpected token[ ]{3}in JSON at position 19/);
+      assert.throws(() => jsonMap.parse(badJsoncArr, null, { jsonc: true }), /Unexpected token[ ]{3}in JSON at position 10/);
+      assert.throws(() => jsonMap.parse(tooManyExits, null, { jsonc: true }), /Unexpected token \* in JSON at position 24/);
+      assert.throws(() => jsonMap.parse(tooManyExitsArr, null, { jsonc: true }), /Unexpected token \* in JSON at position 15/);
+      assert.throws(() => jsonMap.parse(unopenedComment, null, { jsonc: true }), /Unexpected token H in JSON at position 2/);
+      assert.throws(() => jsonMap.parse(unopenedCommentArr, null, { jsonc: true }), /Unexpected token H in JSON at position 2/);
+    });
+
+    it("Should throw errors for invalid json if jsonc option false or not given and json contains comments or trailing commas", () => {
+      assert.throws(() => jsonMap.parse(jsonc, null, { jsonc: false }), /Unexpected token \/ in JSON at position 4/);
+      assert.throws(() => jsonMap.parse(jsonc, null, {}), /Unexpected token \/ in JSON at position 4/);
+      assert.throws(() => jsonMap.parse(jsonc), /Unexpected token \/ in JSON at position 4/);
+      assert.throws(() => jsonMap.parse(jsonWithTrailingComma), /Unexpected token ] in JSON at position 38/);
+      assert.throws(() => jsonMap.parse(jsonObjWithTrailingComma), /Unexpected token } in JSON at position 45/);
+    });
+  });
 
   function testParse(json, expectedData, skipReverseCheck, whitespace) {
     var result = jsonMap.parse(json);
