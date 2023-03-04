@@ -61,7 +61,7 @@ exports.parse = function (source, _, options) {
           case '\n': column = 0; line++; break;
           case '/':
             if (!jsonc) break loop;
-            pos++;
+            column++; pos++;
             parseComment();
             continue loop;
           default: break loop;
