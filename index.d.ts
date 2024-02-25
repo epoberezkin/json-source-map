@@ -15,9 +15,8 @@ declare module 'json-source-map' {
     export interface ParseResult {
         data: any; // The parsed data as a JavaScript object.
         pointers: {
-            [key: string]: {
-                value: any; // The value of the property or element.
-                valuePos: { // The starting position of the value in the original JSON string.
+            [key: string]: {                
+                value: { // The starting position of the value in the original JSON string.
                     line: number;
                     column: number;
                     pos: number;
@@ -46,8 +45,7 @@ declare module 'json-source-map' {
         json: string; // The generated JSON string.
         pointers: {
             [key: string]: {
-                value: any; // The value of the property or element.
-                valuePos: { // The starting position of the value in the resulting JSON string.
+                value: { // The starting position of the value in the resulting JSON string.
                     line: number;
                     column: number;
                     pos: number;
