@@ -3,6 +3,7 @@
   "version": "0.6.1",
   "description": "Parse/stringify JSON and provide source-map for JSON-pointers to all nodes",
   "main": "index.js",
+  "types": "index.d.ts",
   "scripts": {
     "eslint": "eslint index.js spec",
     "test-spec": "mocha spec -R spec",
